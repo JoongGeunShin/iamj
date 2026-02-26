@@ -11,11 +11,12 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.0.3
   riverpod_annotation: ^3.0.3
+  shared_preferences: ^2.5.3
+  flutter_native_splash: ^2.4.7
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -24,12 +25,31 @@ dev_dependencies:
   build_runner: ^2.7.1
   custom_lint: ^0.8.0
   riverpod_lint: ^3.0.3
+  flutter_launcher_icons: ^0.14.4
 flutter:
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
+  assets:
+    - assets/logo/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo/app_logo_resize.png"
+  adaptive_icon_background: "#ffffff" # 배경색
+  adaptive_icon_foreground: "assets/logo/app_logo_resize.png" # 로고만 있는 이미지
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/logo/app_logo.png
+  # 다크모드 대응(선택)
+  color_dark: "#ffffff"
+  image_dark: assets/logo/app_logo.png
+  # Android 12+는 시스템 스플래시 규격이 따로 있어 별도 설정 권장
+  android_12:
+    color: "#ffffff"
+    image: assets/logo/app_logo.png
+    icon_background_color: "#ffffff"
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
