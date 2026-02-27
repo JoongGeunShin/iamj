@@ -10,4 +10,15 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
 
   @override
   Future<void> saveUserPurpose(String purpose) => localDataSource.savePurpose(purpose);
+
+  @override
+  Future<int> getLatestStep() async {
+    return 0;
+  }
+
+  @override
+  Future<void> saveProgress(int step) {
+    // TODO: implement saveProgress
+    throw UnimplementedError();
+  }
 }
