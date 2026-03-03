@@ -6,7 +6,7 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
   OnboardingRepositoryImpl(this.localDataSource);
 
   @override
-  bool isFirstLaunch() => localDataSource.getIsFirstLaunch();
+  String? getUserPurpose() => localDataSource.getPurpose();
 
   @override
   Future<void> saveUserPurpose(String purpose) => localDataSource.savePurpose(purpose);

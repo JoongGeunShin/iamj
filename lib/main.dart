@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:iamj/presentation/home/screens/home_screen.dart';
 import 'package:iamj/presentation/onboarding/screens/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,16 +25,32 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final savedPurpose = ref.watch(savedUserPurposeProvider);
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const OnboardingScreen(),
+      home: savedPurpose.when(
+        // 데이터 로드가 완료되었을 때
+        data: (purpose) {
+          if (purpose != null && purpose.isNotEmpty) {
+            return const HomeScreen(); // 데이터 있으면 홈
+          } else {
+            return const OnboardingScreen(); // 없으면 온보딩
+          }
+        },
+        // 앱이 처음 켜질 때 SharedPreferences 읽는 동안 보여줄 화면
+        loading: () => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        // 에러 발생 시 (일단 온보딩으로 보냄)
+        error: (err, stack) => const OnboardingScreen(),
+      ),
     );
   }
 }

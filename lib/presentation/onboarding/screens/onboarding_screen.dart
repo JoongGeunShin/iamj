@@ -1,5 +1,11 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:iamj/presentation/onboarding/widgets/background_title_widget.dart';
+import 'package:iamj/presentation/onboarding/screens/onboarding_hero_detail_screen.dart';
+import '../widgets/big_circle_widget.dart';
+import '../widgets/onboarding_bottom_sheet.dart';
+import '../widgets/satellite_widget.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -9,146 +15,138 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+    with TickerProviderStateMixin {
+  late AnimationController _rotationController;
+  late AnimationController _pulseController;
+  late AnimationController _fadeController;
 
-  // 현재 진행 중인 단계 (0, 1, 2...)
-  int currentStep = 0;
-  // 각 단계의 완료 여부
-  List<bool> isCompleted = [false, false, false];
+  List<bool> isSelected = [false, false, false];
+  late final List<bool> _isPushing;
+  List<String> satelliteImages = ['exercise', 'study', 'yoga'];
   final int totalSteps = 3;
+  final double orbitRadius = 120.0;
+  final double _satelliteTapDiameter = 120.0;
 
   @override
   void initState() {
     super.initState();
-    // 천천히 회전하는 애니메이션
-    _controller = AnimationController(
+    _isPushing = List<bool>.filled(totalSteps, false);
+    _rotationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 10),
+      duration: const Duration(seconds: 15),
     )..repeat();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 2000),
+    );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _rotationController.dispose();
+    _pulseController.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
-  // 설정 페이지로 이동 후 돌아오면 상태 업데이트
-  void _navigateToSetup() async {
-    if (currentStep >= totalSteps) return;
+  Future<void> _onSatelliteTapped(int index) async {
+    if (kDebugMode) {
+      debugPrint('${satelliteImages[index]} 클릭됨');
+    }
+    if (index < 0 || index >= totalSteps) return;
+    if (_isPushing[index]) return;
 
-    // TODO: 실제 설정 페이지로 Navigator.push
-    // final result = await Navigator.push(context, ...);
+    final imageDir = satelliteImages[index];
+    final heroTag = 'onboarding-satellite-$imageDir';
+    final backgroundAssetPath = 'assets/icon/${imageDir}_filled.png';
 
-    // 예시를 위해 1초 후 완료된 것으로 가정
-    await Future.delayed(const Duration(milliseconds: 500));
+    setState(() => _isPushing[index] = true);
+    try {
+      await Navigator.of(context).push(
+        PageRouteBuilder(
+          opaque: false,
+          barrierColor: Colors.transparent,
+          transitionDuration: const Duration(milliseconds: 700),
+          reverseTransitionDuration: const Duration(milliseconds: 700),
+          pageBuilder: (context, animation, secondaryAnimation) {
+            return OnboardingHeroDetailScreen(
+              heroTag: heroTag,
+              backgroundAssetPath: backgroundAssetPath,
+            );
+          },
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+        ),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() => _isPushing[index] = false);
+    }
 
-    setState(() {
-      isCompleted[currentStep] = true;
-      if (currentStep < totalSteps - 1) {
-        currentStep++;
-      }
-    });
+    if (!mounted) return;
+    setState(() => isSelected[index] = true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: GestureDetector(
-        onTap: _navigateToSetup,
-        child: Center(
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // 1. 큰 원 (궤도)
-              Container(
-                width: 250,
-                height: 250,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.black12, width: 2),
-                ),
+      backgroundColor: Color(0xff000000),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            const OnboardingBottomSheet(),
+            const BackgroundTitleWidget(),
+            Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  BigCircleRipple(
+                    pulseController: _pulseController,
+                    orbitDiameter: orbitRadius * 2,
+                  ),
+                  SizedBox.square(
+                    dimension: (orbitRadius * 2) + _satelliteTapDiameter,
+                    child: AnimatedBuilder(
+                      animation: _rotationController,
+                      builder: (context, child) {
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.center,
+                          children: List.generate(totalSteps, (index) {
+                            final double angle =
+                                (index * (2 * pi / totalSteps)) +
+                                    (_rotationController.value * 2 * pi);
+
+                            return Transform.translate(
+                              offset: Offset(
+                                orbitRadius * cos(angle),
+                                orbitRadius * sin(angle),
+                              ),
+                              child: Satellite(
+                                index: index,
+                                done: isSelected[index],
+                                pulseController: _pulseController,
+                                imageDir: satelliteImages[index],
+                                onTap: () => _onSatelliteTapped(index),
+                              ),
+                            );
+                          }),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-
-              // 2. 중앙 문구
-              const Text(
-                'IamJ',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-
-              // 3. 회전하는 파란 원들
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return Stack(
-                    children: List.generate(totalSteps, (index) {
-                      // 각 원의 각도 계산 (회전 애니메이션 포함)
-                      double angle = (index * (2 * pi / totalSteps)) + (_controller.value * 2 * pi);
-                      double radius = 125.0; // 큰 원의 반지름
-
-                      return Transform.translate(
-                        offset: Offset(
-                          radius * cos(angle),
-                          radius * sin(angle),
-                        ),
-                        child: _buildStepCircle(index),
-                      );
-                    }),
-                  );
-                },
-              ),
-
-              // 하단 안내 메시지
-              Positioned(
-                bottom: 100,
-                child: Text(
-                  currentStep < totalSteps
-                      ? "화면을 탭하여 ${currentStep + 1}번째 단계를 설정하세요"
-                      : "모든 설정이 완료되었습니다!",
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 각 단계별 파란 원 위젯
-  Widget _buildStepCircle(int index) {
-    bool done = isCompleted[index];
-    bool isCurrent = index == currentStep;
-
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: done ? Colors.blue.shade700 : Colors.blue.shade300,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 2,
-          )
-        ],
-        border: isCurrent
-            ? Border.all(color: Colors.orange, width: 3) // 현재 단계 강조
-            : null,
-      ),
-      child: Center(
-        child: done
-            ? const Icon(Icons.check, color: Colors.white)
-            : Text(
-          "${index + 1}",
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
       ),
     );
