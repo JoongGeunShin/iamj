@@ -74,22 +74,6 @@ class Satellite extends StatelessWidget {
                     child: Image.asset(
                       assetPath,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        if (done) {
-                          return const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 20,
-                          );
-                        }
-                        return Text(
-                          '${index + 1}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      },
                     ),
                   ),
                 ),
