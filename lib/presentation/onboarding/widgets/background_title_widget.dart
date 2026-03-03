@@ -9,7 +9,7 @@ class BackgroundTitleWidget extends StatelessWidget {
     super.key,
     this.title = 'IamJ',
     this.top = 0,
-    this.left = -60,
+    this.left = -100,
   });
 
   @override
