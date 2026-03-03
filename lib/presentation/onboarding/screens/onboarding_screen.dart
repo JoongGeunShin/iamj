@@ -71,7 +71,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           opaque: false,
           barrierColor: Colors.transparent,
           transitionDuration: const Duration(milliseconds: 700),
-          reverseTransitionDuration: const Duration(milliseconds: 600),
+          reverseTransitionDuration: const Duration(milliseconds: 700),
           pageBuilder: (context, animation, secondaryAnimation) {
             return OnboardingHeroDetailScreen(
               heroTag: heroTag,
@@ -79,7 +79,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             );
           },
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return child;
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
           },
         ),
       );

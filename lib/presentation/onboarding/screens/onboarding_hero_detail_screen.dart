@@ -33,7 +33,7 @@ class OnboardingHeroDetailScreen extends StatelessWidget {
             children: [
               Positioned.fill(
                 child: Container(
-                  color: Colors.white.withValues(alpha: 0.55 * curved.value),
+                  color: Colors.white.withValues(alpha: 0.75 * curved.value),
                 ),
               ),
               Positioned.fill(

@@ -20,8 +20,6 @@ class Satellite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final String normalAssetPath = 'assets/icon/$imageDir.png';
-    // final String fillAssetPath = 'assets/icon/${imageDir}_filled.png';
     final String assetPath = 'assets/icon/$imageDir.png';
 
     return GestureDetector(
