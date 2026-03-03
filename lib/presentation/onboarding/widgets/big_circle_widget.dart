@@ -16,12 +16,12 @@ class BigCircleRipple extends StatelessWidget {
       animation: pulseController,
       builder: (context, child) {
         return Container(
-          width: orbitDiameter * (1 + pulseController.value * 0.2),
-          height: orbitDiameter * (1 + pulseController.value * 0.2),
+          width: orbitDiameter,
+          height: orbitDiameter,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.blue.withOpacity(1.0 - pulseController.value),
+              color: Colors.white.withValues(alpha: 1-pulseController.value),
               width: 2,
             ),
           ),

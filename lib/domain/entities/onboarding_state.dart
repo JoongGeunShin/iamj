@@ -1,6 +1,5 @@
 class OnboardingState {
   final bool isFirstLaunch;
-
   final int currentStep;
   final List<bool> isCompleted;
   final int totalSteps;
