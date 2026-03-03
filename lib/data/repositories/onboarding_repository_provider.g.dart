@@ -90,7 +90,7 @@ final class OnboardingNotifierProvider
 }
 
 String _$onboardingNotifierHash() =>
-    r'cdd0a3344415cffcac1d6f2010728bdef590cdf9';
+    r'df11296886dc7feb5e32fb51e8cb59915dd0f4e3';
 
 abstract class _$OnboardingNotifier extends $Notifier<OnboardingState> {
   OnboardingState build();
@@ -110,3 +110,36 @@ abstract class _$OnboardingNotifier extends $Notifier<OnboardingState> {
     element.handleValue(ref, created);
   }
 }
+
+@ProviderFor(savedUserPurpose)
+const savedUserPurposeProvider = SavedUserPurposeProvider._();
+
+final class SavedUserPurposeProvider
+    extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
+    with $FutureModifier<String?>, $FutureProvider<String?> {
+  const SavedUserPurposeProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'savedUserPurposeProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$savedUserPurposeHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String?> create(Ref ref) {
+    return savedUserPurpose(ref);
+  }
+}
+
+String _$savedUserPurposeHash() => r'2fdb4258c3e5756f101e0ef1fb61bf684eb5a84f';

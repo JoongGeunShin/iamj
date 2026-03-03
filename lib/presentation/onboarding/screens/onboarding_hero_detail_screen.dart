@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/repositories/onboarding_repository_provider.dart';
 import '../../home/screens/home_screen.dart';
 
-class OnboardingHeroDetailScreen extends StatelessWidget {
+class OnboardingHeroDetailScreen extends ConsumerWidget {
   final String heroTag;
   final String backgroundAssetPath;
 
@@ -13,7 +15,7 @@ class OnboardingHeroDetailScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final route = ModalRoute.of(context);
     final animation = route?.animation;
     final screenSize = MediaQuery.sizeOf(context);
@@ -99,7 +101,8 @@ class OnboardingHeroDetailScreen extends StatelessWidget {
                         Expanded(
                           child: InkWell(
                             borderRadius: BorderRadius.circular(16),
-                            onTap: () {
+                            onTap: () async {
+                              await ref.read(onboardingProvider.notifier).selectPurpose(heroTag.split('-').last.toUpperCase());
                               Navigator.of(context).pushAndRemoveUntil(
                                 MaterialPageRoute(builder: (_) => const HomeScreen()),
                                     (route) => false,

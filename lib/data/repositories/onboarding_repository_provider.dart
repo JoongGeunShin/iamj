@@ -14,18 +14,23 @@ OnboardingRepository onboardingRepository(Ref ref) {
 class OnboardingNotifier extends _$OnboardingNotifier {
   @override
   OnboardingState build() {
-    return OnboardingState(isSelected: [false, false, false]);
+    return OnboardingState();
   }
 
-  Future<void> selectPurpose(int index, String purpose) async {
-    final newList = [false, false, false];
-    newList[index] = true;
-
-    state = state.copyWith(
-      isSelected: newList,
-      selectedPurpose: purpose,
-    );
-
+  Future<void> selectPurpose(String purpose) async {
+    state = state.copyWith(selectedPurpose: purpose);
     await ref.read(onboardingRepositoryProvider).saveUserPurpose(purpose);
+    ref.invalidate(savedUserPurposeProvider);
   }
 }
+
+@riverpod
+Future<String?> savedUserPurpose(Ref ref) async {
+  final repository = ref.watch(onboardingRepositoryProvider);
+  return repository.getUserPurpose(); // SharedPreferences에서 읽어옴
+}
+// @riverpod
+// String? savedUserPurpose(Ref ref) {
+//   final repository = ref.watch(onboardingRepositoryProvider);
+//   return repository.getUserPurpose();
+// }

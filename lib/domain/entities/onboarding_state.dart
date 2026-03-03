@@ -1,18 +1,11 @@
 class OnboardingState {
-  final List<bool> isSelected;
   final String? selectedPurpose;
+  OnboardingState({this.selectedPurpose});
 
-  OnboardingState({
-    required this.isSelected,
-    this.selectedPurpose,
-  });
+  bool isSelected(String purpose) => selectedPurpose == purpose;
 
-  OnboardingState copyWith({
-    List<bool>? isSelected,
-    String? selectedPurpose,
-  }) {
+  OnboardingState copyWith({String? selectedPurpose}) {
     return OnboardingState(
-      isSelected: isSelected ?? this.isSelected,
       selectedPurpose: selectedPurpose ?? this.selectedPurpose,
     );
   }
