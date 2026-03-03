@@ -1,26 +1,19 @@
 class OnboardingState {
-  final bool isFirstLaunch;
-  final int currentStep;
-  final List<bool> isCompleted;
-  final int totalSteps;
-
+  final List<bool> isSelected;
+  final String? selectedPurpose;
 
   OnboardingState({
-    required this.isFirstLaunch,
-    required this.currentStep,
-    required this.isCompleted,
-    this.totalSteps = 3,
+    required this.isSelected,
+    this.selectedPurpose,
   });
 
   OnboardingState copyWith({
-    bool? isFirstLaunch,
-    int? currentStep,
-    List<bool>? isCompleted,
+    List<bool>? isSelected,
+    String? selectedPurpose,
   }) {
     return OnboardingState(
-      isFirstLaunch: isFirstLaunch ?? this.isFirstLaunch,
-      currentStep: currentStep ?? this.currentStep,
-      isCompleted: isCompleted ?? this.isCompleted,
+      isSelected: isSelected ?? this.isSelected,
+      selectedPurpose: selectedPurpose ?? this.selectedPurpose,
     );
   }
 }

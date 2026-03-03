@@ -6,19 +6,8 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
   OnboardingRepositoryImpl(this.localDataSource);
 
   @override
-  bool isFirstLaunch() => localDataSource.getIsFirstLaunch();
+  String? getUserPurpose() => localDataSource.getPurpose();
 
   @override
   Future<void> saveUserPurpose(String purpose) => localDataSource.savePurpose(purpose);
-
-  @override
-  Future<int> getLatestStep() async {
-    return 0;
-  }
-
-  @override
-  Future<void> saveProgress(int step) {
-    // TODO: implement saveProgress
-    throw UnimplementedError();
-  }
 }
