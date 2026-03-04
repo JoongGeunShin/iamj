@@ -36,19 +36,16 @@ class MyApp extends ConsumerWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: savedPurpose.when(
-        // 데이터 로드가 완료되었을 때
         data: (purpose) {
           if (purpose != null && purpose.isNotEmpty) {
-            return const HomeScreen(); // 데이터 있으면 홈
+            return const HomeScreen();
           } else {
-            return const OnboardingScreen(); // 없으면 온보딩
+            return const OnboardingScreen();
           }
         },
-        // 앱이 처음 켜질 때 SharedPreferences 읽는 동안 보여줄 화면
         loading: () => const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         ),
-        // 에러 발생 시 (일단 온보딩으로 보냄)
         error: (err, stack) => const OnboardingScreen(),
       ),
     );
