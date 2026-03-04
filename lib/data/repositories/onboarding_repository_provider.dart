@@ -29,8 +29,3 @@ Future<String?> savedUserPurpose(Ref ref) async {
   final repository = ref.watch(onboardingRepositoryProvider);
   return repository.getUserPurpose(); // SharedPreferences에서 읽어옴
 }
-// @riverpod
-// String? savedUserPurpose(Ref ref) {
-//   final repository = ref.watch(onboardingRepositoryProvider);
-//   return repository.getUserPurpose();
-// }
