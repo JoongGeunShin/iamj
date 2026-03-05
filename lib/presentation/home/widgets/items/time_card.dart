@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TimeCard extends StatefulWidget {
-  const TimeCard({
-    super.key,
-    required this.now,
-  });
+  const TimeCard({super.key, required this.now});
 
   final DateTime now;
 
@@ -12,7 +9,8 @@ class TimeCard extends StatefulWidget {
   State<TimeCard> createState() => _TimeCardState();
 }
 
-class _TimeCardState extends State<TimeCard> with SingleTickerProviderStateMixin {
+class _TimeCardState extends State<TimeCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -32,13 +30,11 @@ class _TimeCardState extends State<TimeCard> with SingleTickerProviderStateMixin
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutBack,
-    ));
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    _scaleAnimation = Tween<double>(
+      begin: 0.9,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
     _controller.forward();
   }
 
@@ -72,8 +68,8 @@ class _TimeCardState extends State<TimeCard> with SingleTickerProviderStateMixin
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.tertiary,
+                  Colors.black.withValues(alpha: 0.5),
+                  Colors.black.withValues(alpha: 1.0),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -81,7 +77,9 @@ class _TimeCardState extends State<TimeCard> with SingleTickerProviderStateMixin
               borderRadius: BorderRadius.circular(24), // 좀 더 둥글게 수정
               boxShadow: [
                 BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -119,7 +117,11 @@ class _TimeCardState extends State<TimeCard> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildAnimatedText(String text, TextStyle? style, double startInterval) {
+  Widget _buildAnimatedText(
+    String text,
+    TextStyle? style,
+    double startInterval,
+  ) {
     return FadeTransition(
       opacity: CurvedAnimation(
         parent: _controller,

@@ -41,7 +41,7 @@ final class CurrentPositionProvider
   }
 }
 
-String _$currentPositionHash() => r'7a77bdf719b3c1cfcba04e46cf3a89b883ea2bca';
+String _$currentPositionHash() => r'30b64bef78a8be2fa6953936d6ff9e3fdf13ca16';
 
 @ProviderFor(currentGrid)
 const currentGridProvider = CurrentGridProvider._();

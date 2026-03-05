@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../../../domain/entities/weather_state.dart';
 
-enum WeatherType { clear, rainy, cloudy, snowy }
 
 class WeatherBackground extends StatelessWidget {
   final WeatherType type;
@@ -12,9 +12,10 @@ class WeatherBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<Color> bgColors;
+
     switch (type) {
       case WeatherType.clear:
-        bgColors = [const Color(0xFF4FACFE), const Color(0xFF00F2FE)];
+        bgColors = [const Color(0xFFFFDF22), const Color(0xFF599468)];
         break;
       case WeatherType.rainy:
         bgColors = [const Color(0xFF2C3E50), const Color(0xFF4CA1AF)];
@@ -56,10 +57,10 @@ class WeatherBackground extends StatelessWidget {
         height: 400,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           boxShadow: [
             BoxShadow(
-              color: Colors.yellow.withOpacity(0.2),
+              color: Colors.yellow.withValues(alpha: 0.2),
               blurRadius: 100,
               spreadRadius: 50,
             ),
@@ -115,7 +116,7 @@ class _ParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withOpacity(0.5);
+    final paint = Paint()..color = Colors.white.withValues(alpha: 0.5);
     final random = Random(42); // 일정한 패턴 유지
 
     for (int i = 0; i < 30; i++) {
