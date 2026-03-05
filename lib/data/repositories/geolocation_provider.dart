@@ -25,7 +25,10 @@ Future<Position> currentPosition(Ref ref) async {
   }
 
   return Geolocator.getCurrentPosition(
-    desiredAccuracy: LocationAccuracy.low,
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.low,
+      distanceFilter: 100,
+    ),
   );
 }
 
