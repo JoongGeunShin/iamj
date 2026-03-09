@@ -8,6 +8,7 @@ import 'package:iamj/data/repositories/weather_repository_provider.dart';
 import 'package:iamj/domain/entities/weather_state.dart';
 import 'package:iamj/presentation/home/widgets/backgrounds/weather_background.dart';
 import 'package:iamj/presentation/home/widgets/dialogs/lock_dialog.dart';
+import 'package:iamj/presentation/home/widgets/items/content_card.dart';
 import 'package:iamj/presentation/home/widgets/items/time_card.dart';
 import '../widgets/buttons/draggable_fab.dart';
 
@@ -33,10 +34,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final purposeAsync = ref.watch(savedUserPurposeProvider);
     final gridAsync = ref.watch(currentGridProvider);
 
+    // 3. 위치 → 격자 → 날씨 타입 계산
+    final weatherType = gridAsync.when<WeatherType>(
+      data: (grid) {
+        final weatherAsync = ref.watch(watchWeatherProvider(nx: grid.nx, ny: grid.ny));
+        return weatherAsync.maybeWhen(
+          data: (weather) => weather.type,
+          orElse: () => WeatherType.clear,
+        );
+      },
+      loading: () => WeatherType.clear,
+      error: (_, __) => WeatherType.clear,
+    );
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: WeatherBackground(
-        type: WeatherType.clear,
+        type: weatherType,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -67,8 +81,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  // --- UI 컴포넌트 메서드 분리 ---
-
   Widget _buildMainBody(AsyncValue timeAsync, AsyncValue purposeAsync, AsyncValue gridAsync) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,6 +91,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           error: (err, _) => Center(child: Text('time load err: $err')),
         ),
         const SizedBox(height: 18),
+        ContentCard(),
         Expanded(
           child: Center(
             child: purposeAsync.when(
