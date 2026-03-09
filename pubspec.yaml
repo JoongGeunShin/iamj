@@ -19,6 +19,9 @@ dependencies:
   flutter_native_splash: ^2.4.7
   dio: ^5.9.2
   geolocator: ^14.0.2
+  omni_datetime_picker: ^2.3.1
+  intl: ^0.20.2
+  time_picker_spinner_pop_up: ^3.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
