@@ -47,7 +47,7 @@ class _TimeCardState extends State<TimeCard>
   String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
   String _weekdayKo(int weekday) {
-    return ['MON,', 'TEW', 'WED', 'THU', 'FRI', 'SAT', 'SUN'][weekday - 1];
+    return ['MON', 'TEW', 'WED', 'THU', 'FRI', 'SAT', 'SUN'][weekday - 1];
   }
 
   @override
