@@ -4,12 +4,16 @@ import 'package:iamj/data/repositories/clock_repository_provider.dart';
 import 'package:iamj/data/repositories/geolocation_provider.dart';
 import 'package:iamj/data/repositories/lock_repository_provider.dart';
 import 'package:iamj/data/repositories/onboarding_repository_provider.dart';
+import 'package:iamj/data/repositories/schedule_repository_provider.dart';
 import 'package:iamj/data/repositories/weather_repository_provider.dart';
 import 'package:iamj/domain/entities/weather_state.dart';
 import 'package:iamj/presentation/home/widgets/backgrounds/weather_background.dart';
+import 'package:iamj/presentation/home/widgets/buttons/add_schedule_button.dart';
+import 'package:iamj/presentation/home/widgets/dialogs/add_schedule_dialog.dart';
 import 'package:iamj/presentation/home/widgets/dialogs/lock_dialog.dart';
 import 'package:iamj/presentation/home/widgets/items/content_card.dart';
 import 'package:iamj/presentation/home/widgets/items/time_card.dart';
+import '../../../domain/entities/schedule_state.dart';
 import '../widgets/buttons/draggable_fab.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -33,11 +37,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final timeAsync = ref.watch(watchTimeProvider);
     final purposeAsync = ref.watch(savedUserPurposeProvider);
     final gridAsync = ref.watch(currentGridProvider);
+    final scheduleAsync = ref.watch(scheduleListStreamProvider);
 
     // 3. 위치 → 격자 → 날씨 타입 계산
     final weatherType = gridAsync.when<WeatherType>(
       data: (grid) {
-        final weatherAsync = ref.watch(watchWeatherProvider(nx: grid.nx, ny: grid.ny));
+        final weatherAsync = ref.watch(
+          watchWeatherProvider(nx: grid.nx, ny: grid.ny),
+        );
         return weatherAsync.maybeWhen(
           data: (weather) => weather.type,
           orElse: () => WeatherType.clear,
@@ -59,7 +66,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // [레이어 1] 메인 콘텐츠 레이어 (상태에 따라 터치 차단)
                 IgnorePointer(
                   ignoring: isLocked,
-                  child: _buildMainBody(timeAsync, purposeAsync, gridAsync),
+                  child: _buildMainBody(
+                    timeAsync,
+                    purposeAsync,
+                    gridAsync,
+                    scheduleAsync,
+                  ),
                 ),
 
                 // [레이어 2] 잠금 전용 인터랙션 레이어 (잠금 시에만 활성화)
@@ -69,8 +81,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 DraggableFab(
                   position: _fabPosition,
                   onPositionChanged: isLocked ? (_) {} : _updateFabPosition,
-                  onPressed: () => _handleFabPressed(context, isLocked, lockNotifier),
-                  onLongPress: isLocked ? () => _handleUnlock(context, lockNotifier) : null,
+                  onPressed: () =>
+                      _handleFabPressed(context, isLocked, lockNotifier),
+                  onLongPress: isLocked
+                      ? () => _handleUnlock(context, lockNotifier)
+                      : null,
                   iconData: isLocked ? Icons.lock : Icons.lock_outline,
                 ),
               ],
@@ -81,32 +96,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildMainBody(AsyncValue timeAsync, AsyncValue purposeAsync, AsyncValue gridAsync) {
+  Widget _buildMainBody(
+      AsyncValue timeAsync,
+      AsyncValue purposeAsync,
+      AsyncValue gridAsync,
+      AsyncValue<List<ScheduleState>> scheduleAsync,
+      ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // 1. 고정 상단 영역 (시간 카드)
         timeAsync.when(
           data: (now) => TimeCard(now: now),
           loading: () => const SizedBox(height: 100),
           error: (err, _) => Center(child: Text('time load err: $err')),
         ),
         const SizedBox(height: 18),
-        ContentCard(),
+
+        // 2. 스크롤 가능한 일정 영역 (Expanded를 사용하여 남은 공간 확보)
         Expanded(
-          child: Center(
-            child: purposeAsync.when(
-              data: (purpose) => Text(
-                purpose != null ? '당신의 목표는: ${purpose.toUpperCase()}입니다!' : '설정된 목표가 없습니다.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              loading: () => const CircularProgressIndicator(),
-              error: (err, stack) => const Text('오류 발생', style: TextStyle(color: Colors.white)),
+          child: scheduleAsync.when(
+            data: (schedules) => ListView.builder(
+              // 내부 패딩을 주어 UI가 잘리지 않게 함
+              padding: const EdgeInsets.only(bottom: 100),
+              physics: const BouncingScrollPhysics(),
+              itemCount: schedules.length + 1,
+              itemBuilder: (context, index) {
+                if (index == schedules.length) {
+                  // 리스트 최하단에 추가 버튼 배치
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: AddScheduleButton(
+                      onTab: () {
+                        final DateTime now = timeAsync.value ?? DateTime.now();
+                        AddScheduleDialog.show(context, now);
+                      },
+                    ),
+                  );
+                }
+                // 일정 카드
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: ContentCard(schedule: schedules[index]),
+                );
+              },
             ),
+            loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
+            error: (err, _) => Center(child: Text('Schedule error: $err', style: TextStyle(color: Colors.white))),
           ),
         ),
+
+        // 위치 오류 메시지 등이 있을 경우 하단 표시
         if (gridAsync.hasError) _buildErrorMessage(gridAsync.error.toString()),
-        const BackButton(color: Colors.white),
       ],
     );
   }
@@ -118,7 +159,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onTap: () {
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('page is locked'), duration: Duration(milliseconds: 1000)),
+            const SnackBar(
+              content: Text('page is locked'),
+              duration: Duration(milliseconds: 1000),
+            ),
           );
         },
         child: Container(color: Colors.transparent),
@@ -145,12 +189,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       _fabPosition = Offset(
         (_fabPosition.dx - delta.dx).clamp(0.0, size.width - fabSize),
-        (_fabPosition.dy - delta.dy).clamp(0.0, size.height - fabSize - padding.top - padding.bottom),
+        (_fabPosition.dy - delta.dy).clamp(
+          0.0,
+          size.height - fabSize - padding.top - padding.bottom,
+        ),
       );
     });
   }
 
-  Future<void> _handleFabPressed(BuildContext context, bool isLocked, dynamic lockNotifier) async {
+  Future<void> _handleFabPressed(
+    BuildContext context,
+    bool isLocked,
+    dynamic lockNotifier,
+  ) async {
     if (isLocked) return;
     final bool? result = await LockDialog.showLockDialog(context);
     if (result == true) {
@@ -160,8 +211,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _handleUnlock(BuildContext context, dynamic lockNotifier) {
     lockNotifier.unlock();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('page is unlocked')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('page is unlocked')));
   }
 }

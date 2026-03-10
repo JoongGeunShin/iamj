@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AddScheduleDialog extends StatefulWidget {
+import '../../../../data/repositories/schedule_repository_provider.dart';
+import '../../../../domain/entities/schedule_state.dart';
+
+class AddScheduleDialog extends ConsumerStatefulWidget {
   const AddScheduleDialog({super.key, required this.now});
 
   final DateTime now;
@@ -23,10 +27,10 @@ class AddScheduleDialog extends StatefulWidget {
   }
 
   @override
-  State<AddScheduleDialog> createState() => _AddScheduleDialogState();
+  ConsumerState<AddScheduleDialog> createState() => _AddScheduleDialogState();
 }
 
-class _AddScheduleDialogState extends State<AddScheduleDialog> {
+class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
   late double _startValue;
   late double _endValue;
 
@@ -74,6 +78,22 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
     return h > 0 ? '${h}h ${m}m' : '${m}m';
   }
 
+  Future<void> _onSave() async {
+    final newSchedule = ScheduleState(
+      title: '',
+      memo: '',
+      startTime: _formatTime(_startValue),
+      endTime: _formatTime(_endValue),
+      priority: 'Normal',
+      isCompleted: false,
+      isStared: false,
+    );
+    await ref.read(scheduleProvider.notifier).addSchedule(newSchedule);
+    if (mounted) {
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -104,14 +124,21 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFB138),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     _getDuration(),
-                    style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ],
@@ -128,7 +155,11 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
                     _buildAdjustRow(isStart: true, isPlus: false),
                   ],
                 ),
-                Icon(Icons.arrow_forward_rounded, color: Colors.white.withValues(alpha: 0.8), size: 24),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  size: 24,
+                ),
                 Column(
                   children: [
                     _buildAdjustRow(isStart: false, isPlus: true),
@@ -142,7 +173,10 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
             SliderTheme(
               data: SliderThemeData(
                 trackHeight: 12,
-                rangeThumbShape: const RoundRangeSliderThumbShape(enabledThumbRadius: 15, elevation: 0),
+                rangeThumbShape: const RoundRangeSliderThumbShape(
+                  enabledThumbRadius: 15,
+                  elevation: 0,
+                ),
                 activeTrackColor: Colors.white,
                 inactiveTrackColor: Colors.white.withValues(alpha: 0.05),
                 thumbColor: Colors.white,
@@ -165,9 +199,18 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("00:00", style: TextStyle(color: Colors.white, fontSize: 10)),
-                  Text("12:00", style: TextStyle(color: Colors.white, fontSize: 10)),
-                  Text("24:00", style: TextStyle(color: Colors.white, fontSize: 10)),
+                  Text(
+                    "00:00",
+                    style: TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                  Text(
+                    "12:00",
+                    style: TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                  Text(
+                    "24:00",
+                    style: TextStyle(color: Colors.white, fontSize: 10),
+                  ),
                 ],
               ),
             ),
@@ -177,19 +220,35 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
                 Expanded(
                   child: TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text("CANCEL", style: TextStyle(color: Colors.white38, fontFamily:'WantedSans', fontWeight: FontWeight.w800)),
+                    child: const Text(
+                      "CANCEL",
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontFamily: 'WantedSans',
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => _onSave(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
-                    child: const Text("SAVE", style: TextStyle(fontWeight: FontWeight.w900, fontFamily:'WantedSans', fontSize: 16)),
+                    child: const Text(
+                      "SAVE",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'WantedSans',
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -206,8 +265,16 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _smallBtn("${sign}1h", () => _updateTimeValue(isStart, hours: factor), sign),
-        _smallBtn("${sign}1m", () => _updateTimeValue(isStart, minutes: factor * 1), sign),
+        _smallBtn(
+          "${sign}1h",
+          () => _updateTimeValue(isStart, hours: factor),
+          sign,
+        ),
+        _smallBtn(
+          "${sign}1m",
+          () => _updateTimeValue(isStart, minutes: factor * 1),
+          sign,
+        ),
       ],
     );
   }
@@ -233,7 +300,14 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
   Widget _timeTextColumn(String label, String time) {
     return Column(
       children: [
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10, fontWeight: FontWeight.w800)),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.3),
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           time,
