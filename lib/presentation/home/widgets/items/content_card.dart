@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:iamj/data/repositories/clock_repository_provider.dart';
 import 'package:iamj/data/repositories/schedule_repository_provider.dart';
 import 'package:iamj/domain/entities/schedule_state.dart';
 
 class ContentCard extends ConsumerStatefulWidget {
-  final ScheduleState schedule; // 데이터 주입
+  final ScheduleState schedule;
 
   const ContentCard({super.key, required this.schedule});
 
@@ -18,19 +19,29 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
 
-  late double _startValue;
-  late double _endValue;
+  late String _title, _memo, _startTime, _endTime, _priority;
+  late bool _isCompleted, _isStared;
+
+  late double _startTimeValue, _endTimeValue;
+
 
   @override
   void initState() {
     super.initState();
-    // 시간 문자열(HH:mm)을 Slider용 double(0.0~1.0)로 변환
-    _startValue = _timeStringToDouble(widget.schedule.startTime);
-    _endValue = _timeStringToDouble(widget.schedule.endTime);
+    _startTime = widget.schedule.startTime;
+    _startTimeValue = _timeStringToDouble(_startTime);
+    _endTime = widget.schedule.endTime;
+    _endTimeValue = _timeStringToDouble(_endTime);
+    _title = widget.schedule.title;
+    _memo = widget.schedule.memo;
+    _priority = widget.schedule.priority;
+
+    _isCompleted = widget.schedule.isCompleted;
+    _isStared = widget.schedule.isStared;
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600), // 리스트에 나타날 때 애니메이션
+      duration: const Duration(milliseconds: 600),
     );
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
@@ -41,13 +52,15 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
     _controller.forward();
   }
 
-  // 헬퍼: "08:30" -> 0.354...
   double _timeStringToDouble(String time) {
     try {
       final parts = time.split(':');
-      final hours = int.parse(parts[0]);
+      int hours = int.parse(parts[0]);
       final minutes = int.parse(parts[1]);
-      return (hours * 60 + minutes) / (24 * 60);
+      if (hours == 24) return 1.0;
+
+      final double fraction = (hours * 60 + minutes) / (24 * 60);
+      return fraction;
     } catch (e) {
       return 0.0;
     }
@@ -58,6 +71,42 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
     int hours = (totalMinutes ~/ 60).clamp(0, 23);
     int minutes = (totalMinutes % 60).clamp(0, 59);
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+  }
+
+  String _calculateRemainingTime(DateTime now, String startTimeStr) {
+    try {
+      final parts = startTimeStr.split(':');
+
+      final targetTime = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+      );
+
+      final difference = targetTime.difference(now);
+
+      if (difference.isNegative) {
+        return "진행 중 또는 종료됨";
+      }
+
+      final hours = difference.inHours;
+      final minutes = difference.inMinutes % 60;
+      final seconds = difference.inSeconds % 60;
+
+      return '$hours:$minutes:$seconds';
+
+      // if (hours > 0) {
+      //   return '$hours시간 $minutes분 남음';
+      // } else if (minutes > 0) {
+      //   return '$minutes분 $seconds초 남음';
+      // } else {
+      //   return '$seconds초 후 시작';
+      // }
+    } catch (e) {
+      return "시간 계산 오류";
+    }
   }
 
   @override
@@ -73,6 +122,15 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    final timeAsync = ref.watch(watchTimeProvider);
+
+    // 2. 남은 시간 텍스트 결정
+    final String statusText = timeAsync.when(
+      data: (now) => _calculateRemainingTime(now, widget.schedule.startTime),
+      loading: () => "계산 중...",
+      error: (_, __) => "오류",
+    );
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
@@ -82,7 +140,14 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.03),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withValues(alpha: 0.5),
+                  Colors.black.withValues(alpha: 1.0),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: Colors.white.withOpacity(0.05)),
             ),
@@ -107,13 +172,17 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
                     IconButton(onPressed: _deleteSchedule, icon: Icon(Icons.delete_outline, color: Colors.white.withOpacity(0.5), size: 20))
                   ],
                 ),
+                Text(
+                  statusText,
+                  style: TextStyle(color: const Color(0xFFFFB138).withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildTimeDisplay("START", _formatTime(_startValue)),
+                    _buildTimeDisplay("START", _formatTime(_startTimeValue)),
                     Icon(Icons.arrow_forward, color: Colors.white.withOpacity(0.1), size: 16),
-                    _buildTimeDisplay("END", _formatTime(_endValue)),
+                    _buildTimeDisplay("END", _formatTime(_endTimeValue)),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -130,11 +199,11 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
                     activeTrackColor: const Color(0xFFFFB138),
                     inactiveTrackColor: Colors.white.withOpacity(0.05),
                     // 손잡이를 안 보이게 하려면 색상을 투명하게 만듭니다.
-                    thumbColor: Colors.transparent,
+                    thumbColor: Colors.white,
                   ),
                   child: RangeSlider(
-                    values: RangeValues(_startValue, _endValue),
-                    onChanged: null, // null로 두면 비활성화 상태가 되어 어차피 투명하게 보입니다.
+                    values: RangeValues(_startTimeValue, _endTimeValue),
+                    onChanged: null,
                   ),
                 ),
               ],

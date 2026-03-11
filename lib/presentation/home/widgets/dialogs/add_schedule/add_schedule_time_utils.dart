@@ -1,8 +1,8 @@
 String formatTimeFromDayFraction(double value) {
-  final totalMinutes = (value * 24 * 60).toInt();
-  var hours = totalMinutes ~/ 60;
+  final totalMinutes = (value * 24 * 60).round();
+  final hours = totalMinutes ~/ 60;
   final minutes = totalMinutes % 60;
-  if (hours >= 24) hours = 23;
+
   return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
 }
 
