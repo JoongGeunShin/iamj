@@ -20,7 +20,7 @@ class ScheduleTimeRangeSlider extends StatelessWidget {
       data: SliderThemeData(
         trackHeight: 12,
         rangeThumbShape: const RoundRangeSliderThumbShape(
-          enabledThumbRadius: 15,
+          enabledThumbRadius: 8,
           elevation: 0,
         ),
         activeTrackColor: Colors.white,
