@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iamj/data/repositories/clock_repository_provider.dart';
 import 'package:iamj/data/repositories/schedule_repository_provider.dart';
 import 'package:iamj/domain/entities/schedule_state.dart';
+import 'package:iamj/presentation/content/screens/content_screen.dart';
 
 class ContentCard extends ConsumerStatefulWidget {
   final ScheduleState schedule;
@@ -13,7 +14,8 @@ class ContentCard extends ConsumerStatefulWidget {
   ConsumerState<ContentCard> createState() => _ContentCardState();
 }
 
-class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProviderStateMixin {
+class _ContentCardState extends ConsumerState<ContentCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -23,7 +25,6 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
   late bool _isCompleted, _isStared;
 
   late double _startTimeValue, _endTimeValue;
-
 
   @override
   void initState() {
@@ -44,10 +45,14 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
       duration: const Duration(milliseconds: 600),
     );
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _scaleAnimation = Tween<double>(
+      begin: 0.95,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
   }
@@ -70,13 +75,12 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
     int totalMinutes = (value * 24 * 60).toInt();
     int hours = (totalMinutes ~/ 60).clamp(0, 23);
     int minutes = (totalMinutes % 60).clamp(0, 59);
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+    return '${hours.toString().padLeft(2, '00')}:${minutes.toString().padLeft(2, '00')}';
   }
 
   String _calculateRemainingTime(DateTime now, String startTimeStr) {
     try {
       final parts = startTimeStr.split(':');
-
       final targetTime = DateTime(
         now.year,
         now.month,
@@ -84,26 +88,15 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
         int.parse(parts[0]),
         int.parse(parts[1]),
       );
-
       final difference = targetTime.difference(now);
-
       if (difference.isNegative) {
         return "진행 중 또는 종료됨";
       }
-
       final hours = difference.inHours;
       final minutes = difference.inMinutes % 60;
       final seconds = difference.inSeconds % 60;
 
       return '$hours:$minutes:$seconds';
-
-      // if (hours > 0) {
-      //   return '$hours시간 $minutes분 남음';
-      // } else if (minutes > 0) {
-      //   return '$minutes분 $seconds초 남음';
-      // } else {
-      //   return '$seconds초 후 시작';
-      // }
     } catch (e) {
       return "시간 계산 오류";
     }
@@ -115,7 +108,7 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
     super.dispose();
   }
 
-  void _deleteSchedule(){
+  void _deleteSchedule() {
     print(widget.schedule.id);
     ref.read(scheduleRepositoryProvider).deleteSchedule(widget.schedule.id!);
   }
@@ -131,82 +124,137 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
       error: (_, __) => "오류",
     );
 
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.black.withValues(alpha: 0.5),
-                  Colors.black.withValues(alpha: 1.0),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 4, height: 16,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFB138),
-                        borderRadius: BorderRadius.circular(2),
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            transitionDuration: const Duration(milliseconds: 700),
+            reverseTransitionDuration: const Duration(milliseconds: 700),
+            pageBuilder: (context, animation, secondaryAnimation) {
+              return ContentScreen(schedule: widget.schedule);
+            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+          ),
+        );
+      },
+      child: Hero(
+        tag: 'content_${widget.schedule.id}',
+        child: Material(
+          type: MaterialType.transparency,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.black.withValues(alpha: 0.5),
+                        Colors.black.withValues(alpha: 1.0),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.6,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 4,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    widget.schedule.title.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontFamily: 'WantedSans',
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _deleteSchedule,
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: Colors.white.withOpacity(0.5),
+                              size: 20,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.schedule.title,
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(onPressed: _deleteSchedule, icon: Icon(Icons.delete_outline, color: Colors.white.withOpacity(0.5), size: 20))
-                  ],
-                ),
-                Text(
-                  statusText,
-                  style: TextStyle(color: const Color(0xFFFFB138).withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildTimeDisplay("START", _formatTime(_startTimeValue)),
-                    Icon(Icons.arrow_forward, color: Colors.white.withOpacity(0.1), size: 16),
-                    _buildTimeDisplay("END", _formatTime(_endTimeValue)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                SliderTheme(
-                  data: SliderThemeData(
-                    trackHeight: 4,
-                    // 0 대신 아주 작은 값을 주거나,
-                    // 혹은 투명한 색상을 사용하는 것이 안전합니다.
-                    rangeThumbShape: const RoundRangeSliderThumbShape(
-                      enabledThumbRadius: 1.0, // 0 대신 최소한의 크기를 줌
-                      elevation: 0,
-                    ),
-                    overlayShape: SliderComponentShape.noOverlay,
-                    activeTrackColor: const Color(0xFFFFB138),
-                    inactiveTrackColor: Colors.white.withOpacity(0.05),
-                    // 손잡이를 안 보이게 하려면 색상을 투명하게 만듭니다.
-                    thumbColor: Colors.white,
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          color: const Color(0xFFFFB138).withOpacity(0.7),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildTimeDisplay(
+                            "START",
+                            _formatTime(_startTimeValue),
+                          ),
+                          Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white.withOpacity(0.1),
+                            size: 16,
+                          ),
+                          _buildTimeDisplay("END", _formatTime(_endTimeValue)),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      SliderTheme(
+                        data: SliderThemeData(
+                          trackHeight: 12,
+                          rangeThumbShape: const RoundRangeSliderThumbShape(
+                            enabledThumbRadius: 1.0,
+                            elevation: 0,
+                          ),
+                          overlayShape: SliderComponentShape.noThumb,
+                          activeTrackColor: const Color(0xFFFFB138),
+                          inactiveTrackColor: Colors.white,
+                          thumbColor: Colors.white,
+                        ),
+                        child: RangeSlider(
+                          values: RangeValues(_startTimeValue, _endTimeValue),
+                          onChanged: null,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: RangeSlider(
-                    values: RangeValues(_startTimeValue, _endTimeValue),
-                    onChanged: null,
-                  ),
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -232,7 +280,7 @@ class _ContentCardState extends ConsumerState<ContentCard> with SingleTickerProv
           time,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 24, // 리스트용으로 크기 조절
+            fontSize: 24,
             fontWeight: FontWeight.w900,
             fontFamily: 'WantedSans',
           ),
