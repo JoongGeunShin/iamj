@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:iamj/presentation/common/widgets/buttons/speech_button.dart';
 
 import '../../../../data/repositories/schedule_repository_provider.dart';
 import '../../../../domain/entities/schedule_state.dart';
@@ -120,6 +121,10 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AddScheduleHeader(durationText: _durationText),
+                SpeechButton(onResult: (text) {
+                  print("인식된 텍스트: $text");
+
+                },),
                 const SizedBox(height: 24),
                 ScheduleDialogTextField(
                   controller: _titleController,
