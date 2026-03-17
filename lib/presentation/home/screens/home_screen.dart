@@ -97,11 +97,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildMainBody(
-      AsyncValue timeAsync,
-      AsyncValue purposeAsync,
-      AsyncValue gridAsync,
-      AsyncValue<List<ScheduleState>> scheduleAsync,
-      ) {
+    AsyncValue timeAsync,
+    AsyncValue purposeAsync,
+    AsyncValue gridAsync,
+    AsyncValue<List<ScheduleState>> scheduleAsync,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -113,17 +113,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: 18),
 
-        // 2. 스크롤 가능한 일정 영역 (Expanded를 사용하여 남은 공간 확보)
         Expanded(
           child: scheduleAsync.when(
             data: (schedules) => ListView.builder(
-              // 내부 패딩을 주어 UI가 잘리지 않게 함
               padding: const EdgeInsets.only(bottom: 100),
               physics: const BouncingScrollPhysics(),
               itemCount: schedules.length + 1,
               itemBuilder: (context, index) {
                 if (index == schedules.length) {
-                  // 리스트 최하단에 추가 버튼 배치
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: AddScheduleButton(
@@ -137,12 +134,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // 일정 카드
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: ContentCard(schedule: schedules[index]),
+                  child: ContentCard(schedule: schedules[index], ),
                 );
               },
             ),
-            loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
-            error: (err, _) => Center(child: Text('Schedule error: $err', style: TextStyle(color: Colors.white))),
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+            error: (err, _) => Center(
+              child: Text(
+                'Schedule error: $err',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
           ),
         ),
 
@@ -160,7 +164,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('page is locked'),
+              content: Text(
+                'PAGE IS LOCKED\n LONG PRESS THE LOCK BUTTON TO UNLOCK',
+              ),
               duration: Duration(milliseconds: 1000),
             ),
           );
@@ -213,6 +219,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     lockNotifier.unlock();
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('page is unlocked')));
+    ).showSnackBar(const SnackBar(content: Text('PAGE IS UNLOCKED')));
   }
 }

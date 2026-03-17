@@ -50,6 +50,52 @@ final class LocalDatabaseProvider
 
 String _$localDatabaseHash() => r'4f73414b6802d17bd391f7e7b6ab16fcc28fa50e';
 
+@ProviderFor(geminiDataSource)
+const geminiDataSourceProvider = GeminiDataSourceProvider._();
+
+final class GeminiDataSourceProvider
+    extends
+        $FunctionalProvider<
+          GeminiDataSource,
+          GeminiDataSource,
+          GeminiDataSource
+        >
+    with $Provider<GeminiDataSource> {
+  const GeminiDataSourceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'geminiDataSourceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$geminiDataSourceHash();
+
+  @$internal
+  @override
+  $ProviderElement<GeminiDataSource> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  GeminiDataSource create(Ref ref) {
+    return geminiDataSource(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(GeminiDataSource value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<GeminiDataSource>(value),
+    );
+  }
+}
+
+String _$geminiDataSourceHash() => r'bf71413ee728b91b7f5fd702489b27f1348a60c6';
+
 @ProviderFor(scheduleRepository)
 const scheduleRepositoryProvider = ScheduleRepositoryProvider._();
 
@@ -96,7 +142,7 @@ final class ScheduleRepositoryProvider
 }
 
 String _$scheduleRepositoryHash() =>
-    r'5344fdea9156b53ec39efb1c632ad14bb06efcc0';
+    r'9ad078c6767e6fb555c62bc532f32640ee304dd3';
 
 @ProviderFor(scheduleListStream)
 const scheduleListStreamProvider = ScheduleListStreamProvider._();
@@ -172,7 +218,7 @@ final class ScheduleNotifierProvider
   }
 }
 
-String _$scheduleNotifierHash() => r'72ac711e005fa948d070237a15b61fc70d2da970';
+String _$scheduleNotifierHash() => r'63322e3eccbf625a9e7ce50f36253a1702b9c406';
 
 abstract class _$ScheduleNotifier extends $Notifier<void> {
   void build();

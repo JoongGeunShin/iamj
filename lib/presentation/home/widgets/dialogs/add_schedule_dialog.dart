@@ -180,6 +180,48 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
                 ),
                 const ScheduleTimeAxisLabels(),
                 const SizedBox(height: 48),
+                Container(
+                  alignment: Alignment.bottomRight,
+                  child: IconButton(
+                    onPressed: () async {
+                      final inputText = _memoController.text.trim();
+                      if (inputText.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "you need to write at least your goal",
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        final analyzed = await ref
+                            .read(scheduleProvider.notifier)
+                            .analyzeScheduleText(inputText);
+                        setState(() {
+                          _titleController.text = analyzed.title;
+                          _memoController.text = analyzed.memo;
+                          final startDT = DateTime.parse(analyzed.startTime);
+                          final endDT = DateTime.parse(analyzed.endTime);
+
+                          _startValue = dayFractionFromDateTime(startDT);
+                          _endValue = dayFractionFromDateTime(endDT);
+                        });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("AI가 일정을 분석하여 채워넣었습니다!"),
+                          ),
+                        );
+                      } catch (e) {
+                        print("Error: $e");
+                      }
+                    },
+                    icon: Icon(Icons.auto_awesome, color: Colors.white),
+                  ),
+                ),
                 ScheduleDialogTextField(
                   controller: _memoController,
                   hintText: 'Memo',
@@ -188,6 +230,7 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
                   maxLines: 4,
                   textInputAction: TextInputAction.newline,
                 ),
+
                 const SizedBox(height: 24),
                 AddScheduleActions(
                   onCancel: () => Navigator.pop(context),
