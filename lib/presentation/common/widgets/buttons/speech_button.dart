@@ -10,49 +10,47 @@ class SpeechButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
+      backgroundColor: Colors.transparent,
       onPressed: () async {
-        // 1. 마이크 권한 상태 확인 및 요청
         var status = await Permission.microphone.status;
 
         if (status.isGranted) {
-          // 권한이 이미 있는 경우 바로 다이얼로그 실행
           _showSpeechDialog(context);
         } else if (status.isPermanentlyDenied) {
-          // 사용자가 '다시 묻지 않음'을 선택하고 거부한 경우
           _showSettingsDialog(context);
         } else {
-          // 권한이 없거나 처음 요청하는 경우
           var result = await Permission.microphone.request();
           if (result.isGranted) {
             _showSpeechDialog(context);
           } else {
-            // 단순 거절 시 스낵바 표시
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text("음성 인식을 위해 마이크 권한이 필요합니다."),
+                content: Text("WE NEED A MIC PERMISSION FOR USEAGE"),
                 duration: Duration(seconds: 2),
               ),
             );
           }
         }
       },
-      child: const Icon(Icons.mic),
+      child: const Icon(Icons.mic, color: Colors.white),
     );
   }
 
-  // 음성 인식 다이얼로그 띄우기 로직 분리
   void _showSpeechDialog(BuildContext context) async {
-    final String? result = await showDialog<String>(
+    final String? result = await showGeneralDialog<String>(
       context: context,
-      builder: (context) => const SpeechDialog(),
+      pageBuilder: (context, animation1, animation2) {
+        return const Center(child: SpeechDialog());
+      },
+      transitionBuilder: (context, animation1, animation2, child) {
+        return Transform.translate(
+          offset: Offset(0, 100 * (1 - animation1.value)),
+          child: Opacity(opacity: animation1.value, child: child),
+        );
+      },
     );
-
-    if (result != null && result.isNotEmpty) {
-      onResult(result);
-    }
   }
 
-  // 앱 설정으로 유도하는 안내 다이얼로그
   void _showSettingsDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -66,7 +64,7 @@ class SpeechButton extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              openAppSettings(); // OS 설정 화면으로 이동
+              openAppSettings();
               Navigator.pop(context);
             },
             child: const Text("설정으로 이동"),
