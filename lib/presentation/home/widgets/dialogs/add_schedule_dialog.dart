@@ -14,6 +14,7 @@ import 'add_schedule/widgets/schedule_time_range_slider.dart';
 
 class AddScheduleDialog extends ConsumerStatefulWidget {
   const AddScheduleDialog({super.key, required this.now});
+
   final DateTime now;
 
   static Future<void> show(BuildContext context, DateTime now) {
@@ -80,9 +81,13 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
   }
 
   String get _startTimeText => formatTimeFromDayFraction(_startValue);
+
   String get _endTimeText => formatTimeFromDayFraction(_endValue);
-  String get _durationText =>
-      formatDurationFromDayFractions(startValue: _startValue, endValue: _endValue);
+
+  String get _durationText => formatDurationFromDayFractions(
+    startValue: _startValue,
+    endValue: _endValue,
+  );
 
   Future<void> _onSave() async {
     final newSchedule = ScheduleState(
@@ -120,11 +125,12 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AddScheduleHeader(durationText: _durationText),
-                SpeechButton(onResult: (text) {
-                  print("인식된 텍스트: $text");
-
-                },),
+                AddScheduleHeader(
+                  durationText: _durationText,
+                  onSpeechResult: (text) {
+                    _memoController.text = text;
+                  },
+                ),
                 const SizedBox(height: 24),
                 ScheduleDialogTextField(
                   controller: _titleController,
@@ -156,7 +162,8 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
                       onPlusHours: () => _updateTimeValue(false, hours: 1),
                       onPlusMinutes: () => _updateTimeValue(false, minutes: 1),
                       onMinusHours: () => _updateTimeValue(false, hours: -1),
-                      onMinusMinutes: () => _updateTimeValue(false, minutes: -1),
+                      onMinusMinutes: () =>
+                          _updateTimeValue(false, minutes: -1),
                     ),
                   ],
                 ),

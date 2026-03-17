@@ -64,7 +64,7 @@ class _SpeechDialogState extends State<SpeechDialog>
             _wordsSpoken = result.recognizedWords;
           });
           if (result.finalResult) {
-            Future.delayed(const Duration(milliseconds: 6000), () {
+            Future.delayed(const Duration(milliseconds: 1000), () {
               if (mounted) Navigator.pop(context, _wordsSpoken);
             });
           }

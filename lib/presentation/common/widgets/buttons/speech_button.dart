@@ -49,6 +49,9 @@ class SpeechButton extends StatelessWidget {
         );
       },
     );
+    if (result != null) {
+      onResult(result);
+    }
   }
 
   void _showSettingsDialog(BuildContext context) {
