@@ -40,6 +40,16 @@ class $ScheduleTableTable extends ScheduleTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<TaskItem>, String> tasks =
+      GeneratedColumn<String>(
+        'tasks',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      ).withConverter<List<TaskItem>>($ScheduleTableTable.$convertertasks);
   static const VerificationMeta _startTimeMeta = const VerificationMeta(
     'startTime',
   );
@@ -108,6 +118,7 @@ class $ScheduleTableTable extends ScheduleTable
     id,
     title,
     memo,
+    tasks,
     startTime,
     endTime,
     priority,
@@ -205,6 +216,12 @@ class $ScheduleTableTable extends ScheduleTable
         DriftSqlType.string,
         data['${effectivePrefix}memo'],
       )!,
+      tasks: $ScheduleTableTable.$convertertasks.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}tasks'],
+        )!,
+      ),
       startTime: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}start_time'],
@@ -232,6 +249,9 @@ class $ScheduleTableTable extends ScheduleTable
   $ScheduleTableTable createAlias(String alias) {
     return $ScheduleTableTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<List<TaskItem>, String> $convertertasks =
+      const TaskListConverter();
 }
 
 class ScheduleTableData extends DataClass
@@ -239,6 +259,7 @@ class ScheduleTableData extends DataClass
   final int id;
   final String title;
   final String memo;
+  final List<TaskItem> tasks;
   final String startTime;
   final String endTime;
   final String priority;
@@ -248,6 +269,7 @@ class ScheduleTableData extends DataClass
     required this.id,
     required this.title,
     required this.memo,
+    required this.tasks,
     required this.startTime,
     required this.endTime,
     required this.priority,
@@ -260,6 +282,11 @@ class ScheduleTableData extends DataClass
     map['id'] = Variable<int>(id);
     map['title'] = Variable<String>(title);
     map['memo'] = Variable<String>(memo);
+    {
+      map['tasks'] = Variable<String>(
+        $ScheduleTableTable.$convertertasks.toSql(tasks),
+      );
+    }
     map['start_time'] = Variable<String>(startTime);
     map['end_time'] = Variable<String>(endTime);
     map['priority'] = Variable<String>(priority);
@@ -273,6 +300,7 @@ class ScheduleTableData extends DataClass
       id: Value(id),
       title: Value(title),
       memo: Value(memo),
+      tasks: Value(tasks),
       startTime: Value(startTime),
       endTime: Value(endTime),
       priority: Value(priority),
@@ -290,6 +318,7 @@ class ScheduleTableData extends DataClass
       id: serializer.fromJson<int>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       memo: serializer.fromJson<String>(json['memo']),
+      tasks: serializer.fromJson<List<TaskItem>>(json['tasks']),
       startTime: serializer.fromJson<String>(json['startTime']),
       endTime: serializer.fromJson<String>(json['endTime']),
       priority: serializer.fromJson<String>(json['priority']),
@@ -304,6 +333,7 @@ class ScheduleTableData extends DataClass
       'id': serializer.toJson<int>(id),
       'title': serializer.toJson<String>(title),
       'memo': serializer.toJson<String>(memo),
+      'tasks': serializer.toJson<List<TaskItem>>(tasks),
       'startTime': serializer.toJson<String>(startTime),
       'endTime': serializer.toJson<String>(endTime),
       'priority': serializer.toJson<String>(priority),
@@ -316,6 +346,7 @@ class ScheduleTableData extends DataClass
     int? id,
     String? title,
     String? memo,
+    List<TaskItem>? tasks,
     String? startTime,
     String? endTime,
     String? priority,
@@ -325,6 +356,7 @@ class ScheduleTableData extends DataClass
     id: id ?? this.id,
     title: title ?? this.title,
     memo: memo ?? this.memo,
+    tasks: tasks ?? this.tasks,
     startTime: startTime ?? this.startTime,
     endTime: endTime ?? this.endTime,
     priority: priority ?? this.priority,
@@ -336,6 +368,7 @@ class ScheduleTableData extends DataClass
       id: data.id.present ? data.id.value : this.id,
       title: data.title.present ? data.title.value : this.title,
       memo: data.memo.present ? data.memo.value : this.memo,
+      tasks: data.tasks.present ? data.tasks.value : this.tasks,
       startTime: data.startTime.present ? data.startTime.value : this.startTime,
       endTime: data.endTime.present ? data.endTime.value : this.endTime,
       priority: data.priority.present ? data.priority.value : this.priority,
@@ -352,6 +385,7 @@ class ScheduleTableData extends DataClass
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('memo: $memo, ')
+          ..write('tasks: $tasks, ')
           ..write('startTime: $startTime, ')
           ..write('endTime: $endTime, ')
           ..write('priority: $priority, ')
@@ -366,6 +400,7 @@ class ScheduleTableData extends DataClass
     id,
     title,
     memo,
+    tasks,
     startTime,
     endTime,
     priority,
@@ -379,6 +414,7 @@ class ScheduleTableData extends DataClass
           other.id == this.id &&
           other.title == this.title &&
           other.memo == this.memo &&
+          other.tasks == this.tasks &&
           other.startTime == this.startTime &&
           other.endTime == this.endTime &&
           other.priority == this.priority &&
@@ -390,6 +426,7 @@ class ScheduleTableCompanion extends UpdateCompanion<ScheduleTableData> {
   final Value<int> id;
   final Value<String> title;
   final Value<String> memo;
+  final Value<List<TaskItem>> tasks;
   final Value<String> startTime;
   final Value<String> endTime;
   final Value<String> priority;
@@ -399,6 +436,7 @@ class ScheduleTableCompanion extends UpdateCompanion<ScheduleTableData> {
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.memo = const Value.absent(),
+    this.tasks = const Value.absent(),
     this.startTime = const Value.absent(),
     this.endTime = const Value.absent(),
     this.priority = const Value.absent(),
@@ -409,6 +447,7 @@ class ScheduleTableCompanion extends UpdateCompanion<ScheduleTableData> {
     this.id = const Value.absent(),
     required String title,
     required String memo,
+    this.tasks = const Value.absent(),
     required String startTime,
     required String endTime,
     required String priority,
@@ -423,6 +462,7 @@ class ScheduleTableCompanion extends UpdateCompanion<ScheduleTableData> {
     Expression<int>? id,
     Expression<String>? title,
     Expression<String>? memo,
+    Expression<String>? tasks,
     Expression<String>? startTime,
     Expression<String>? endTime,
     Expression<String>? priority,
@@ -433,6 +473,7 @@ class ScheduleTableCompanion extends UpdateCompanion<ScheduleTableData> {
       if (id != null) 'id': id,
       if (title != null) 'title': title,
       if (memo != null) 'memo': memo,
+      if (tasks != null) 'tasks': tasks,
       if (startTime != null) 'start_time': startTime,
       if (endTime != null) 'end_time': endTime,
       if (priority != null) 'priority': priority,
@@ -445,6 +486,7 @@ class ScheduleTableCompanion extends UpdateCompanion<ScheduleTableData> {
     Value<int>? id,
     Value<String>? title,
     Value<String>? memo,
+    Value<List<TaskItem>>? tasks,
     Value<String>? startTime,
     Value<String>? endTime,
     Value<String>? priority,
@@ -455,6 +497,7 @@ class ScheduleTableCompanion extends UpdateCompanion<ScheduleTableData> {
       id: id ?? this.id,
       title: title ?? this.title,
       memo: memo ?? this.memo,
+      tasks: tasks ?? this.tasks,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       priority: priority ?? this.priority,
@@ -474,6 +517,11 @@ class ScheduleTableCompanion extends UpdateCompanion<ScheduleTableData> {
     }
     if (memo.present) {
       map['memo'] = Variable<String>(memo.value);
+    }
+    if (tasks.present) {
+      map['tasks'] = Variable<String>(
+        $ScheduleTableTable.$convertertasks.toSql(tasks.value),
+      );
     }
     if (startTime.present) {
       map['start_time'] = Variable<String>(startTime.value);
@@ -499,6 +547,7 @@ class ScheduleTableCompanion extends UpdateCompanion<ScheduleTableData> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('memo: $memo, ')
+          ..write('tasks: $tasks, ')
           ..write('startTime: $startTime, ')
           ..write('endTime: $endTime, ')
           ..write('priority: $priority, ')
@@ -525,6 +574,7 @@ typedef $$ScheduleTableTableCreateCompanionBuilder =
       Value<int> id,
       required String title,
       required String memo,
+      Value<List<TaskItem>> tasks,
       required String startTime,
       required String endTime,
       required String priority,
@@ -536,6 +586,7 @@ typedef $$ScheduleTableTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> title,
       Value<String> memo,
+      Value<List<TaskItem>> tasks,
       Value<String> startTime,
       Value<String> endTime,
       Value<String> priority,
@@ -565,6 +616,12 @@ class $$ScheduleTableTableFilterComposer
   ColumnFilters<String> get memo => $composableBuilder(
     column: $table.memo,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<TaskItem>, List<TaskItem>, String>
+  get tasks => $composableBuilder(
+    column: $table.tasks,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<String> get startTime => $composableBuilder(
@@ -617,6 +674,11 @@ class $$ScheduleTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get tasks => $composableBuilder(
+    column: $table.tasks,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get startTime => $composableBuilder(
     column: $table.startTime,
     builder: (column) => ColumnOrderings(column),
@@ -660,6 +722,9 @@ class $$ScheduleTableTableAnnotationComposer
 
   GeneratedColumn<String> get memo =>
       $composableBuilder(column: $table.memo, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<TaskItem>, String> get tasks =>
+      $composableBuilder(column: $table.tasks, builder: (column) => column);
 
   GeneratedColumn<String> get startTime =>
       $composableBuilder(column: $table.startTime, builder: (column) => column);
@@ -719,6 +784,7 @@ class $$ScheduleTableTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String> memo = const Value.absent(),
+                Value<List<TaskItem>> tasks = const Value.absent(),
                 Value<String> startTime = const Value.absent(),
                 Value<String> endTime = const Value.absent(),
                 Value<String> priority = const Value.absent(),
@@ -728,6 +794,7 @@ class $$ScheduleTableTableTableManager
                 id: id,
                 title: title,
                 memo: memo,
+                tasks: tasks,
                 startTime: startTime,
                 endTime: endTime,
                 priority: priority,
@@ -739,6 +806,7 @@ class $$ScheduleTableTableTableManager
                 Value<int> id = const Value.absent(),
                 required String title,
                 required String memo,
+                Value<List<TaskItem>> tasks = const Value.absent(),
                 required String startTime,
                 required String endTime,
                 required String priority,
@@ -748,6 +816,7 @@ class $$ScheduleTableTableTableManager
                 id: id,
                 title: title,
                 memo: memo,
+                tasks: tasks,
                 startTime: startTime,
                 endTime: endTime,
                 priority: priority,

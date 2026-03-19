@@ -11,7 +11,7 @@ part 'schedule_repository_provider.g.dart';
 @riverpod
 LocalDatabase localDatabase(Ref ref) {
   final db = LocalDatabase();
-  ref.onDispose(() => db.close()); // 앱 종료 시 DB 닫기
+  ref.onDispose(() => db.close());
   return db;
 }
 @riverpod
@@ -22,7 +22,7 @@ GeminiDataSource geminiDataSource(Ref ref) {
 @riverpod
 ScheduleRepository scheduleRepository(Ref ref) {
   final db = ref.watch(localDatabaseProvider);
-  final gemini = ref.watch(geminiDataSourceProvider); // gemini 감시
+  final gemini = ref.watch(geminiDataSourceProvider);
   return ScheduleRepositoryImpl(db, gemini); // 2개의 인자 전달
 }
 

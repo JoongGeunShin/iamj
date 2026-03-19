@@ -44,6 +44,10 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _memoController = TextEditingController();
 
+  List<TaskItem> _currentTasks = [];
+
+  bool _isAnalyzing = false;
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +63,6 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
     super.dispose();
   }
 
-  // 시간 조절 로직 (0.0 ~ 1.0 범위 계산)
   void _updateTimeValue(bool isStart, {int? hours, int? minutes}) {
     setState(() {
       double change = 0;
@@ -95,12 +98,14 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
           ? 'non specified schedule'
           : _titleController.text.trim(),
       memo: _memoController.text.trim(),
+      tasks: _currentTasks, // 수정: 보관 중인 tasks 리스트를 전달
       startTime: _startTimeText,
       endTime: _endTimeText,
       priority: 'Normal',
       isCompleted: false,
       isStared: false,
     );
+
     await ref.read(scheduleProvider.notifier).addSchedule(newSchedule);
     if (mounted) {
       Navigator.pop(context);
@@ -182,44 +187,61 @@ class _AddScheduleDialogState extends ConsumerState<AddScheduleDialog> {
                 const SizedBox(height: 48),
                 Container(
                   alignment: Alignment.bottomRight,
-                  child: IconButton(
+                  child: _isAnalyzing
+                      ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                      : IconButton(
                     onPressed: () async {
                       final inputText = _memoController.text.trim();
                       if (inputText.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              "you need to write at least your goal",
-                            ),
-                          ),
+                          const SnackBar(content: Text("you need to write at least your goal")),
                         );
                         return;
                       }
+
+                      setState(() => _isAnalyzing = true); // 로딩 시작
 
                       try {
                         final analyzed = await ref
                             .read(scheduleProvider.notifier)
                             .analyzeScheduleText(inputText);
+
                         setState(() {
                           _titleController.text = analyzed.title;
                           _memoController.text = analyzed.memo;
+                          _currentTasks = analyzed.tasks;
+
                           final startDT = DateTime.parse(analyzed.startTime);
                           final endDT = DateTime.parse(analyzed.endTime);
-
                           _startValue = dayFractionFromDateTime(startDT);
                           _endValue = dayFractionFromDateTime(endDT);
                         });
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("AI가 일정을 분석하여 채워넣었습니다!"),
-                          ),
-                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("AI가 일정을 분석하여 채워넣었습니다!")),
+                          );
+                        }
                       } catch (e) {
-                        print("Error: $e");
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("분석 실패: $e")),
+                          );
+                        }
+                      } finally {
+                        if (mounted) {
+                          setState(() => _isAnalyzing = false); // 로딩 종료 (성공/실패 상관없이)
+                        }
                       }
                     },
-                    icon: Icon(Icons.auto_awesome, color: Colors.white),
+                    icon: const Icon(Icons.auto_awesome, color: Colors.white),
                   ),
                 ),
                 ScheduleDialogTextField(
