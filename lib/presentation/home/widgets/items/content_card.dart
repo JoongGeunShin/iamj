@@ -64,17 +64,26 @@ class _ContentCardState extends ConsumerState<ContentCard>
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
 
-  String _calculateRemainingTime(DateTime now, String startTimeStr) {
+  String _calculateRemainingTime(DateTime now, String startTimeStr, String endTimeStr) {
     try {
-      final parts = startTimeStr.split(':');
-      final targetTime = DateTime(now.year, now.month, now.day, int.parse(parts[0]), int.parse(parts[1]));
-      final difference = targetTime.difference(now);
-      if (difference.isNegative) return "IN PROGRESS";
+      final startParts = startTimeStr.split(':');
+      final endParts = endTimeStr.split(':');
 
-      final h = difference.inHours;
-      final m = difference.inMinutes % 60;
-      final s = difference.inSeconds % 60;
-      return 'STARTS IN ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+      final startTime = DateTime(now.year, now.month, now.day, int.parse(startParts[0]), int.parse(startParts[1]));
+      final endTime = DateTime(now.year, now.month, now.day, int.parse(endParts[0]), int.parse(endParts[1]));
+
+      if (now.isBefore(startTime)) {
+        final difference = startTime.difference(now);
+        final h = difference.inHours;
+        final m = difference.inMinutes % 60;
+        final s = difference.inSeconds % 60;
+        return 'STARTS IN ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+      }
+      if (now.isBefore(endTime)) {
+        return "IN PROGRESS";
+      }
+      return "COMPLETED";
+
     } catch (e) {
       return "";
     }
@@ -95,7 +104,7 @@ class _ContentCardState extends ConsumerState<ContentCard>
     final timeAsync = ref.watch(watchTimeProvider);
     final now = timeAsync.value ?? DateTime.now();
     final double nowValue = (now.hour * 60 + now.minute) / (24 * 60);
-    final String statusText = _calculateRemainingTime(now, widget.schedule.startTime);
+    final String statusText = _calculateRemainingTime(now, widget.schedule.startTime, widget.schedule.endTime);
 
     return GestureDetector(
       onTap: () {
