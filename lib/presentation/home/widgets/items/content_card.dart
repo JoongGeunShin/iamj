@@ -51,7 +51,7 @@ class _ContentCardState extends ConsumerState<ContentCard>
       final parts = time.split(':');
       int hours = int.parse(parts[0]);
       int minutes = int.parse(parts[1]);
-      return (hours * 60 + minutes) / (24 * 60);
+      return ((hours * 60 + minutes) / (24 * 60)).clamp(0.0, 1.0);
     } catch (e) {
       return 0.0;
     }
@@ -83,7 +83,6 @@ class _ContentCardState extends ConsumerState<ContentCard>
         return "IN PROGRESS";
       }
       return "COMPLETED";
-
     } catch (e) {
       return "";
     }
@@ -96,14 +95,16 @@ class _ContentCardState extends ConsumerState<ContentCard>
   }
 
   void _deleteSchedule() {
-    ref.read(scheduleRepositoryProvider).deleteSchedule(widget.schedule.id!);
+    if (widget.schedule.id != null) {
+      ref.read(scheduleRepositoryProvider).deleteSchedule(widget.schedule.id!);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final timeAsync = ref.watch(watchTimeProvider);
     final now = timeAsync.value ?? DateTime.now();
-    final double nowValue = (now.hour * 60 + now.minute) / (24 * 60);
+    final double nowValue = ((now.hour * 60 + now.minute) / (24 * 60)).clamp(0.0, 1.0);
     final String statusText = _calculateRemainingTime(now, widget.schedule.startTime, widget.schedule.endTime);
 
     return GestureDetector(
@@ -113,48 +114,6 @@ class _ContentCardState extends ConsumerState<ContentCard>
           pageBuilder: (context, anim, _) => ContentScreen(schedule: widget.schedule),
           transitionsBuilder: (context, anim, _, child) => FadeTransition(opacity: anim, child: child),
         ));
-      },
-      onLongPress: () {
-        final s = widget.schedule;
-
-        // 전체 스케줄 기본 정보 출력
-        print('=========================================');
-        print('           SCHEDULE DETAILS              ');
-        print('=========================================');
-        print('ID        : ${s.id}');
-        print('Title     : ${s.title}');
-        print('Time      : ${s.startTime} ~ ${s.endTime}');
-        print('Priority  : ${s.priority}');
-        print('Completed : ${s.isCompleted}');
-        print('Stared    : ${s.isStared}');
-        print('Memo      : ${s.memo}');
-        print('-----------------------------------------');
-
-        // Task 리스트 상세 출력
-        print('TASKS (${s.tasks.length} items):');
-
-        if (s.tasks.isEmpty) {
-          print('  (No tasks available)');
-        } else {
-          for (var i = 0; i < s.tasks.length; i++) {
-            final task = s.tasks[i];
-            print('  [${i + 1}] ${task.taskTitle} ${task.isDone ? "✅" : "❌"}');
-
-            // 세부 단계(Detail)가 있다면 출력
-            if (task.detail != null && task.detail!.isNotEmpty) {
-              for (var d in task.detail!) {
-                print('      - Sequence: ${d.sequence}');
-                print('        RestTime: ${d.restTime}');
-              }
-            }
-
-            // 해당 태스크 뒤에 전체 휴식 시간이 있다면 출력
-            if (task.restTime != null && task.restTime!.isNotEmpty) {
-              print('      * Total Rest: ${task.restTime}');
-            }
-          }
-        }
-        print('=========================================');
       },
       child: Hero(
         tag: 'content_${widget.schedule.id}',
@@ -167,18 +126,19 @@ class _ContentCardState extends ConsumerState<ContentCard>
               child: ScaleTransition(
                 scale: _scaleAnimation,
                 child: Container(
-                  padding: const EdgeInsets.all(28),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0D0D0D),
                     borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: Colors.white.withOpacity(0.08)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisSize: MainAxisSize.min, // 중요: 자식 크기만큼만 차지
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Column(
@@ -186,9 +146,11 @@ class _ContentCardState extends ConsumerState<ContentCard>
                               children: [
                                 Text(
                                   widget.schedule.title.toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 22,
+                                    fontSize: 20,
                                     fontFamily: 'WantedSans',
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: -0.5,
@@ -199,9 +161,9 @@ class _ContentCardState extends ConsumerState<ContentCard>
                                   statusText,
                                   style: const TextStyle(
                                     color: Color(0xFFFFB138),
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.0,
+                                    letterSpacing: 0.5,
                                   ),
                                 ),
                               ],
@@ -209,39 +171,44 @@ class _ContentCardState extends ConsumerState<ContentCard>
                           ),
                           IconButton(
                             onPressed: _deleteSchedule,
-                            icon: Icon(Icons.close, color: Colors.white.withOpacity(0.2), size: 20),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.2), size: 20),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 32),
-
+                      const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _buildTimeDisplay("START", _formatTime(_startTimeValue)),
-                          Container(
-                            height: 1,
-                            width: 30,
-                            color: Colors.white.withValues(alpha: 0.1),
+
+                          Expanded(
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 16),
+                              height: 1,
+                              color: Colors.white.withValues(alpha: 0.05),
+                            ),
                           ),
                           _buildTimeDisplay("END", _formatTime(_endTimeValue)),
                         ],
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          double width = constraints.maxWidth;
+                          double rangeWidth = (width * (_endTimeValue - _startTimeValue)).clamp(0.0, width);
 
-                      Column(
-                        children: [
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              double width = constraints.maxWidth;
-                              return Stack(
+                          return Column(
+                            children: [
+                              Stack(
                                 alignment: Alignment.centerLeft,
                                 children: [
                                   Container(
                                     height: 6,
                                     width: width,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.05),
+                                      color: Colors.white.withValues(alpha: 0.4),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
@@ -249,16 +216,10 @@ class _ContentCardState extends ConsumerState<ContentCard>
                                     left: width * _startTimeValue,
                                     child: Container(
                                       height: 6,
-                                      width: width * (_endTimeValue - _startTimeValue),
+                                      width: rangeWidth,
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: Colors.white.withValues(alpha: 0.4),
                                         borderRadius: BorderRadius.circular(10),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.white.withOpacity(0.2),
-                                            blurRadius: 8,
-                                          )
-                                        ],
                                       ),
                                     ),
                                   ),
@@ -270,31 +231,30 @@ class _ContentCardState extends ConsumerState<ContentCard>
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFFFB138),
                                         shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.black, width: 1.5),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFFFFB138).withOpacity(0.5),
-                                            blurRadius: 10,
-                                            spreadRadius: 2,
+                                            color: const Color(0xFFFFB138).withValues(alpha: 0.5),
+                                            blurRadius: 8,
+                                            spreadRadius: 1,
                                           )
                                         ],
                                       ),
                                     ),
                                   ),
                                 ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _subText("00:00"),
-                              _subText("12:00"),
-                              _subText("24:00"),
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _subText("00:00"),
+                                  _subText("12:00"),
+                                  _subText("24:00"),
+                                ],
+                              ),
                             ],
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -309,7 +269,12 @@ class _ContentCardState extends ConsumerState<ContentCard>
 
   Widget _subText(String text) => Text(
     text,
-    style: TextStyle(color: Color(0xFFFFB138), fontSize: 9, fontWeight: FontWeight.bold),
+    style: const TextStyle(
+      color: Color(0xFFFFB138),
+      fontSize: 9,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.5,
+    ),
   );
 
   Widget _buildTimeDisplay(String label, String time) {
@@ -319,18 +284,18 @@ class _ContentCardState extends ConsumerState<ContentCard>
         Text(
           label,
           style: TextStyle(
-            color: Color(0xFFFFB138),
-            fontSize: 10,
+            color: const Color(0xFFFFB138).withValues(alpha: 0.8),
+            fontSize: 9,
             fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
+            letterSpacing: 1.2,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           time,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 28,
+            fontSize: 24,
             fontWeight: FontWeight.w900,
             fontFamily: 'WantedSans',
           ),
