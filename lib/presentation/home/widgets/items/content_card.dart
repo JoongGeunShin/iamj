@@ -105,6 +105,48 @@ class _ContentCardState extends ConsumerState<ContentCard>
           transitionsBuilder: (context, anim, _, child) => FadeTransition(opacity: anim, child: child),
         ));
       },
+      onLongPress: () {
+        final s = widget.schedule;
+
+        // 전체 스케줄 기본 정보 출력
+        print('=========================================');
+        print('           SCHEDULE DETAILS              ');
+        print('=========================================');
+        print('ID        : ${s.id}');
+        print('Title     : ${s.title}');
+        print('Time      : ${s.startTime} ~ ${s.endTime}');
+        print('Priority  : ${s.priority}');
+        print('Completed : ${s.isCompleted}');
+        print('Stared    : ${s.isStared}');
+        print('Memo      : ${s.memo}');
+        print('-----------------------------------------');
+
+        // Task 리스트 상세 출력
+        print('TASKS (${s.tasks.length} items):');
+
+        if (s.tasks.isEmpty) {
+          print('  (No tasks available)');
+        } else {
+          for (var i = 0; i < s.tasks.length; i++) {
+            final task = s.tasks[i];
+            print('  [${i + 1}] ${task.taskTitle} ${task.isDone ? "✅" : "❌"}');
+
+            // 세부 단계(Detail)가 있다면 출력
+            if (task.detail != null && task.detail!.isNotEmpty) {
+              for (var d in task.detail!) {
+                print('      - Sequence: ${d.sequence}');
+                print('        RestTime: ${d.restTime}');
+              }
+            }
+
+            // 해당 태스크 뒤에 전체 휴식 시간이 있다면 출력
+            if (task.restTime != null && task.restTime!.isNotEmpty) {
+              print('      * Total Rest: ${task.restTime}');
+            }
+          }
+        }
+        print('=========================================');
+      },
       child: Hero(
         tag: 'content_${widget.schedule.id}',
         child: Material(
