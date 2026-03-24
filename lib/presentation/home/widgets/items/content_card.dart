@@ -51,7 +51,7 @@ class _ContentCardState extends ConsumerState<ContentCard>
       final parts = time.split(':');
       int hours = int.parse(parts[0]);
       int minutes = int.parse(parts[1]);
-      return ((hours * 60 + minutes) / (24 * 60)).clamp(0.0, 1.0);
+      return (hours * 60 + minutes) / (24 * 60);
     } catch (e) {
       return 0.0;
     }
@@ -64,25 +64,17 @@ class _ContentCardState extends ConsumerState<ContentCard>
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
 
-  String _calculateRemainingTime(DateTime now, String startTimeStr, String endTimeStr) {
+  String _calculateRemainingTime(DateTime now, String startTimeStr) {
     try {
-      final startParts = startTimeStr.split(':');
-      final endParts = endTimeStr.split(':');
+      final parts = startTimeStr.split(':');
+      final targetTime = DateTime(now.year, now.month, now.day, int.parse(parts[0]), int.parse(parts[1]));
+      final difference = targetTime.difference(now);
+      if (difference.isNegative) return "IN PROGRESS";
 
-      final startTime = DateTime(now.year, now.month, now.day, int.parse(startParts[0]), int.parse(startParts[1]));
-      final endTime = DateTime(now.year, now.month, now.day, int.parse(endParts[0]), int.parse(endParts[1]));
-
-      if (now.isBefore(startTime)) {
-        final difference = startTime.difference(now);
-        final h = difference.inHours;
-        final m = difference.inMinutes % 60;
-        final s = difference.inSeconds % 60;
-        return 'STARTS IN ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-      }
-      if (now.isBefore(endTime)) {
-        return "IN PROGRESS";
-      }
-      return "COMPLETED";
+      final h = difference.inHours;
+      final m = difference.inMinutes % 60;
+      final s = difference.inSeconds % 60;
+      return 'STARTS IN ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     } catch (e) {
       return "";
     }
@@ -95,17 +87,15 @@ class _ContentCardState extends ConsumerState<ContentCard>
   }
 
   void _deleteSchedule() {
-    if (widget.schedule.id != null) {
-      ref.read(scheduleRepositoryProvider).deleteSchedule(widget.schedule.id!);
-    }
+    ref.read(scheduleRepositoryProvider).deleteSchedule(widget.schedule.id!);
   }
 
   @override
   Widget build(BuildContext context) {
     final timeAsync = ref.watch(watchTimeProvider);
     final now = timeAsync.value ?? DateTime.now();
-    final double nowValue = ((now.hour * 60 + now.minute) / (24 * 60)).clamp(0.0, 1.0);
-    final String statusText = _calculateRemainingTime(now, widget.schedule.startTime, widget.schedule.endTime);
+    final double nowValue = (now.hour * 60 + now.minute) / (24 * 60);
+    final String statusText = _calculateRemainingTime(now, widget.schedule.startTime);
 
     return GestureDetector(
       onTap: () {
@@ -114,6 +104,48 @@ class _ContentCardState extends ConsumerState<ContentCard>
           pageBuilder: (context, anim, _) => ContentScreen(schedule: widget.schedule),
           transitionsBuilder: (context, anim, _, child) => FadeTransition(opacity: anim, child: child),
         ));
+      },
+      onLongPress: () {
+        final s = widget.schedule;
+
+        // 전체 스케줄 기본 정보 출력
+        print('=========================================');
+        print('           SCHEDULE DETAILS              ');
+        print('=========================================');
+        print('ID        : ${s.id}');
+        print('Title     : ${s.title}');
+        print('Time      : ${s.startTime} ~ ${s.endTime}');
+        print('Priority  : ${s.priority}');
+        print('Completed : ${s.isCompleted}');
+        print('Stared    : ${s.isStared}');
+        print('Memo      : ${s.memo}');
+        print('-----------------------------------------');
+
+        // Task 리스트 상세 출력
+        print('TASKS (${s.tasks.length} items):');
+
+        if (s.tasks.isEmpty) {
+          print('  (No tasks available)');
+        } else {
+          for (var i = 0; i < s.tasks.length; i++) {
+            final task = s.tasks[i];
+            print('  [${i + 1}] ${task.taskTitle} ${task.isDone ? "✅" : "❌"}');
+
+            // 세부 단계(Detail)가 있다면 출력
+            if (task.detail != null && task.detail!.isNotEmpty) {
+              for (var d in task.detail!) {
+                print('      - Sequence: ${d.sequence}');
+                print('        RestTime: ${d.restTime}');
+              }
+            }
+
+            // 해당 태스크 뒤에 전체 휴식 시간이 있다면 출력
+            if (task.restTime != null && task.restTime!.isNotEmpty) {
+              print('      * Total Rest: ${task.restTime}');
+            }
+          }
+        }
+        print('=========================================');
       },
       child: Hero(
         tag: 'content_${widget.schedule.id}',
@@ -126,19 +158,18 @@ class _ContentCardState extends ConsumerState<ContentCard>
               child: ScaleTransition(
                 scale: _scaleAnimation,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0D0D0D),
                     borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    border: Border.all(color: Colors.white.withOpacity(0.08)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min, // 중요: 자식 크기만큼만 차지
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Column(
@@ -146,11 +177,9 @@ class _ContentCardState extends ConsumerState<ContentCard>
                               children: [
                                 Text(
                                   widget.schedule.title.toUpperCase(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 20,
+                                    fontSize: 22,
                                     fontFamily: 'WantedSans',
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: -0.5,
@@ -161,9 +190,9 @@ class _ContentCardState extends ConsumerState<ContentCard>
                                   statusText,
                                   style: const TextStyle(
                                     color: Color(0xFFFFB138),
-                                    fontSize: 11,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.5,
+                                    letterSpacing: 1.0,
                                   ),
                                 ),
                               ],
@@ -171,44 +200,39 @@ class _ContentCardState extends ConsumerState<ContentCard>
                           ),
                           IconButton(
                             onPressed: _deleteSchedule,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.2), size: 20),
+                            icon: Icon(Icons.close, color: Colors.white.withOpacity(0.2), size: 20),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _buildTimeDisplay("START", _formatTime(_startTimeValue)),
-
-                          Expanded(
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 16),
-                              height: 1,
-                              color: Colors.white.withValues(alpha: 0.05),
-                            ),
+                          Container(
+                            height: 1,
+                            width: 30,
+                            color: Colors.white.withValues(alpha: 0.1),
                           ),
                           _buildTimeDisplay("END", _formatTime(_endTimeValue)),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          double width = constraints.maxWidth;
-                          double rangeWidth = (width * (_endTimeValue - _startTimeValue)).clamp(0.0, width);
+                      const SizedBox(height: 32),
 
-                          return Column(
-                            children: [
-                              Stack(
+                      Column(
+                        children: [
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              double width = constraints.maxWidth;
+                              return Stack(
                                 alignment: Alignment.centerLeft,
                                 children: [
                                   Container(
                                     height: 6,
                                     width: width,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.4),
+                                      color: Colors.white.withValues(alpha: 0.05),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
@@ -216,10 +240,16 @@ class _ContentCardState extends ConsumerState<ContentCard>
                                     left: width * _startTimeValue,
                                     child: Container(
                                       height: 6,
-                                      width: rangeWidth,
+                                      width: width * (_endTimeValue - _startTimeValue),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.4),
+                                        color: Colors.white,
                                         borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.white.withOpacity(0.2),
+                                            blurRadius: 8,
+                                          )
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -231,30 +261,31 @@ class _ContentCardState extends ConsumerState<ContentCard>
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFFFB138),
                                         shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.black, width: 1.5),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFFFFB138).withValues(alpha: 0.5),
-                                            blurRadius: 8,
-                                            spreadRadius: 1,
+                                            color: const Color(0xFFFFB138).withOpacity(0.5),
+                                            blurRadius: 10,
+                                            spreadRadius: 2,
                                           )
                                         ],
                                       ),
                                     ),
                                   ),
                                 ],
-                              ),
-                              const SizedBox(height: 10),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _subText("00:00"),
-                                  _subText("12:00"),
-                                  _subText("24:00"),
-                                ],
-                              ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _subText("00:00"),
+                              _subText("12:00"),
+                              _subText("24:00"),
                             ],
-                          );
-                        },
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -269,12 +300,7 @@ class _ContentCardState extends ConsumerState<ContentCard>
 
   Widget _subText(String text) => Text(
     text,
-    style: const TextStyle(
-      color: Color(0xFFFFB138),
-      fontSize: 9,
-      fontWeight: FontWeight.bold,
-      letterSpacing: 0.5,
-    ),
+    style: TextStyle(color: Color(0xFFFFB138), fontSize: 9, fontWeight: FontWeight.bold),
   );
 
   Widget _buildTimeDisplay(String label, String time) {
@@ -284,18 +310,18 @@ class _ContentCardState extends ConsumerState<ContentCard>
         Text(
           label,
           style: TextStyle(
-            color: const Color(0xFFFFB138).withValues(alpha: 0.8),
-            fontSize: 9,
+            color: Color(0xFFFFB138),
+            fontSize: 10,
             fontWeight: FontWeight.w800,
-            letterSpacing: 1.2,
+            letterSpacing: 1.5,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           time,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.w900,
             fontFamily: 'WantedSans',
           ),
