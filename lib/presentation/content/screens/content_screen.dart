@@ -15,234 +15,269 @@ class ContentScreen extends ConsumerStatefulWidget {
 }
 
 class _ContentScreenState extends ConsumerState<ContentScreen> {
-  late String _title, _memo, _startTime, _endTime, _priority;
-  late bool _isCompleted, _isStared;
-
+  late String _startTime, _endTime;
   late double _startTimeValue, _endTimeValue;
 
   @override
   void initState() {
     super.initState();
-    super.initState();
     _startTime = widget.schedule.startTime;
     _startTimeValue = _timeStringToDouble(_startTime);
     _endTime = widget.schedule.endTime;
     _endTimeValue = _timeStringToDouble(_endTime);
-    _title = widget.schedule.title;
-    _memo = widget.schedule.memo;
-    _priority = widget.schedule.priority;
-
-    _isCompleted = widget.schedule.isCompleted;
-    _isStared = widget.schedule.isStared;
   }
 
   double _timeStringToDouble(String time) {
     try {
       final parts = time.split(':');
       int hours = int.parse(parts[0]);
-      final minutes = int.parse(parts[1]);
-      if (hours == 24) return 1.0;
-
-      final double fraction = (hours * 60 + minutes) / (24 * 60);
-      return fraction;
+      int minutes = int.parse(parts[1]);
+      return (hours * 60 + minutes) / (24 * 60);
     } catch (e) {
       return 0.0;
     }
   }
 
-  String _formatTime(double value) {
-    int totalMinutes = (value * 24 * 60).toInt();
-    int hours = (totalMinutes ~/ 60).clamp(0, 23);
-    int minutes = (totalMinutes % 60).clamp(0, 59);
-    return '${hours.toString().padLeft(2, '00')}:${minutes.toString().padLeft(
-        2, '00')}';
+  double _calculateProgress(DateTime now, String startStr, String endStr) {
+    final start = _timeToDateTime(now, startStr);
+    final end = _timeToDateTime(now, endStr);
+    if (now.isBefore(start)) return 0.0;
+    if (now.isAfter(end)) return 1.0;
+    final total = end.difference(start).inSeconds;
+    final elapsed = now.difference(start).inSeconds;
+    return (elapsed / total).clamp(0.0, 1.0);
   }
 
-  String _calculateRemainingTime(DateTime now, String startTimeStr) {
-    try {
-      final parts = startTimeStr.split(':');
-      final targetTime = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        int.parse(parts[0]),
-        int.parse(parts[1]),
-      );
-      final difference = targetTime.difference(now);
-      if (difference.isNegative) {
-        return "진행 중 또는 종료됨";
-      }
-      final hours = difference.inHours;
-      final minutes = difference.inMinutes % 60;
-      final seconds = difference.inSeconds % 60;
-
-      return '$hours:$minutes:$seconds';
-    } catch (e) {
-      return "시간 계산 오류";
-    }
-  }
-
-  void _deleteSchedule() {
-    print(widget.schedule.id);
-    ref.read(scheduleRepositoryProvider).deleteSchedule(widget.schedule.id!);
+  DateTime _timeToDateTime(DateTime now, String timeStr) {
+    final parts = timeStr.split(':');
+    return DateTime(now.year, now.month, now.day, int.parse(parts[0]), int.parse(parts[1]));
   }
 
   @override
   Widget build(BuildContext context) {
     final timeAsync = ref.watch(watchTimeProvider);
+    final now = timeAsync.value ?? DateTime.now();
+    final progress = _calculateProgress(now, _startTime, _endTime);
 
-    final String statusText = timeAsync.when(
-      data: (now) => _calculateRemainingTime(now, widget.schedule.startTime),
-      loading: () => "계산 중...",
-      error: (_, __) => "오류",
-    );
+    return Scaffold(
+      backgroundColor: const Color(0xFF000000),
+      body: CustomScrollView(
+        slivers: [
+          // 1. App Bar (Modern Minimalist)
+          SliverAppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.more_horiz, color: Colors.white),
+                onPressed: () {},
+              )
+            ],
+          ),
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.black, // 이전 화면과 일치하는 배경색
-        body: Hero(
-          tag: 'content_${widget.schedule.id}', // 출발지와 동일한 태그
-          child: Material(
-              type: MaterialType.transparency,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.black.withValues(alpha: 0.5),
-                          Colors.black.withValues(alpha: 1.0),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  // 2. Schedule Title (Huge Fintech Style)
+                  Text(
+                    "Balance of Time",
+                    style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  Hero(
+                    tag: 'content_${widget.schedule.id}',
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: Text(
+                        widget.schedule.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 42,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'WantedSans',
+                          letterSpacing: -1.5,
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // 3. Status Action Buttons (Image 1 Style)
+                  Row(
+                    children: [
+                      _buildActionButton("Edit Task", const Color(0xFFFFB138), Colors.black),
+                      const SizedBox(width: 12),
+                      _buildActionButton("Complete", const Color(0xFF1A1A1A), Colors.white),
+                    ],
+                  ),
+                  const SizedBox(height: 48),
+
+                  // 4. Progress Card
+                  Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D0D0D),
+                      borderRadius: BorderRadius.circular(32),
+                      border: Border.all(color: Colors.white.withOpacity(0.08)),
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            _buildTimeInfo("START", _startTime),
+                            _buildTimeInfo("END", _endTime),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        // Custom Progress Bar
+                        Stack(
+                          children: [
                             Container(
-                              width: MediaQuery
-                                  .of(context)
-                                  .size
-                                  .width * 0.6,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 4,
-                                    height: 16,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      widget.schedule.title.toUpperCase(),
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontFamily: 'WantedSans',
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            IconButton(
-                              onPressed: _deleteSchedule,
-                              icon: Icon(
-                                Icons.delete_outline,
-                                color: Colors.white.withOpacity(0.5),
-                                size: 20,
+                            FractionallySizedBox(
+                              widthFactor: progress,
+                              child: Container(
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFB138),
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(color: const Color(0xFFFFB138).withOpacity(0.3), blurRadius: 10, spreadRadius: 2),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        Text(
-                          statusText,
-                          style: TextStyle(
-                            color: Colors.yellowAccent.withValues(alpha: 0.8),
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildTimeDisplay(
-                                "START", _formatTime(_startTimeValue)),
-                            Icon(
-                              Icons.arrow_forward,
-                              color: Colors.white.withOpacity(0.1),
-                              size: 16,
-                            ),
-                            _buildTimeDisplay("END", _formatTime(_endTimeValue)),
+                            Text("${(progress * 100).toInt()}% COMPLETED",
+                                style: const TextStyle(color: Color(0xFFFFB138), fontSize: 10, fontWeight: FontWeight.w900)),
+                            Text(_getTimeRemainingText(now),
+                                style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10, fontWeight: FontWeight.bold)),
                           ],
-                        ),
-                        const SizedBox(height: 24),
-                        SliderTheme(
-                          data: SliderThemeData(
-                            trackHeight: 4,
-                            rangeThumbShape: const RoundRangeSliderThumbShape(
-                              enabledThumbRadius: 1.0,
-                              elevation: 0,
-                            ),
-                            overlayShape: SliderComponentShape.noOverlay,
-                            activeTrackColor: const Color(0xFFFFB138),
-                            inactiveTrackColor: Colors.white.withOpacity(0.05),
-                            thumbColor: Colors.white,
-                          ),
-                          child: RangeSlider(
-                            values: RangeValues(_startTimeValue, _endTimeValue),
-                            onChanged: null,
-                          ),
-                        ),
+                        )
                       ],
                     ),
                   ),
+                  const SizedBox(height: 48),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("TASKS", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+                      Text("View History", style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  if (widget.schedule.tasks.isEmpty)
+                    _buildEmptyTask()
+                  else
+                    ...widget.schedule.tasks.map((task) => _buildTaskCard(task)).toList(),
+
+                  const SizedBox(height: 100),
                 ],
-              )
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(String label, Color bgColor, Color textColor) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 15),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTimeDisplay(String label, String time) {
+  Widget _buildTimeInfo(String label, String time) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: const Color(0xFFFFB138).withOpacity(0.7),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.2,
-          ),
-        ),
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
         const SizedBox(height: 4),
-        Text(
-          time,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24, // 리스트용으로 크기 조절
-            fontWeight: FontWeight.w900,
-            fontFamily: 'WantedSans',
-          ),
-        ),
+        Text(time, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, fontFamily: 'WantedSans')),
       ],
     );
+  }
+
+  Widget _buildTaskCard(dynamic task) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D0D0D),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), shape: BoxShape.circle),
+            child: const Icon(Icons.check, color: Color(0xFFFFB138), size: 18),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              task.taskTitle,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+          ),
+          Icon(Icons.arrow_forward_ios, color: Colors.white.withOpacity(0.1), size: 14),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyTask() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D0D0D),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.03)),
+      ),
+      child: Center(
+        child: Text("Focus on your main goal.", style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 14)),
+      ),
+    );
+  }
+
+  String _getTimeRemainingText(DateTime now) {
+    final end = _timeToDateTime(now, _endTime);
+    final diff = end.difference(now);
+    if (diff.isNegative) return "ENDED";
+    return "${diff.inHours}H ${diff.inMinutes % 60}M LEFT";
   }
 }
