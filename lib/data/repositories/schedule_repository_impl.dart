@@ -45,10 +45,9 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
     await (db.update(db.scheduleTable)..where((t) => t.id.equals(schedule.id!)))
         .write(
       ScheduleTableCompanion(
-        // 다른 필드들과 마찬가지로 Value()로 감싸야 합니다.
         title: Value(schedule.title),
         memo: Value(schedule.memo),
-        tasks: Value(schedule.tasks), // 이 부분을 수정하세요!
+        tasks: Value(schedule.tasks),
         startTime: Value(schedule.startTime),
         endTime: Value(schedule.endTime),
         priority: Value(schedule.priority),

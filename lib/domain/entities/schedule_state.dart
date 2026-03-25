@@ -19,6 +19,30 @@ class ScheduleState {
     required this.isCompleted,
     required this.isStared,
   });
+
+  ScheduleState copyWith({
+    int? id,
+    String? title,
+    String? memo,
+    List<TaskItem>? tasks,
+    String? startTime, endTime,
+    String? priority,
+    bool? isCompleted,
+    bool? isStared,
+  }) {
+    return ScheduleState(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      isCompleted: isCompleted ?? this.isCompleted,
+      tasks: tasks ?? this.tasks,
+      memo: memo?? this.memo,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      priority: priority ?? this.priority,
+      isStared: isStared ?? this.isStared,
+    );
+  }
+
 }
 
 class TaskItem {
