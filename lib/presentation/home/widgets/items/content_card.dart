@@ -147,36 +147,55 @@ class _ContentCardState extends ConsumerState<ContentCard>
         }
         print('=========================================');
       },
-      child: Hero(
-        tag: 'content_${widget.schedule.id}',
-        child: Material(
-          type: MaterialType.transparency,
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0D0D0D),
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: Colors.white.withOpacity(0.08)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D0D0D),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(color: Colors.white.withOpacity(0.08)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.schedule.title.toUpperCase(),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Hero(
+
+                              tag: 'content_${widget.schedule.id}',
+                              flightShuttleBuilder: (
+                                  flightContext,
+                                  animation,
+                                  flightDirection,
+                                  fromHeroContext,
+                                  toHeroContext,
+                                  ) {
+                                return DefaultTextStyle(
+                                  style: DefaultTextStyle.of(toHeroContext).style,
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Material(
+                                      type: MaterialType.transparency,
+                                      child: toHeroContext.widget,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Material(
+                                type: MaterialType.transparency,
+                                child: Text(
+                                  widget.schedule.title,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 22,
@@ -185,111 +204,111 @@ class _ContentCardState extends ConsumerState<ContentCard>
                                     letterSpacing: -0.5,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  statusText,
-                                  style: const TextStyle(
-                                    color: Color(0xFFFFB138),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.0,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              statusText,
+                              style: const TextStyle(
+                                color: Color(0xFFFFB138),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _deleteSchedule,
+                        icon: Icon(Icons.close, color: Colors.white.withOpacity(0.2), size: 20),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildTimeDisplay("START", _formatTime(_startTimeValue)),
+                      Container(
+                        height: 1,
+                        width: 30,
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                      _buildTimeDisplay("END", _formatTime(_endTimeValue)),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  Column(
+                    children: [
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          double width = constraints.maxWidth;
+                          return Stack(
+                            alignment: Alignment.centerLeft,
+                            children: [
+                              Container(
+                                height: 6,
+                                width: width,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              Positioned(
+                                left: width * _startTimeValue,
+                                child: Container(
+                                  height: 6,
+                                  width: width * (_endTimeValue - _startTimeValue),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.white.withOpacity(0.2),
+                                        blurRadius: 8,
+                                      )
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: _deleteSchedule,
-                            icon: Icon(Icons.close, color: Colors.white.withOpacity(0.2), size: 20),
-                          ),
-                        ],
+                              ),
+                              Positioned(
+                                left: (width * nowValue) - 4,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFB138),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.black, width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFFB138).withOpacity(0.5),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
-                      const SizedBox(height: 32),
-
+                      const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildTimeDisplay("START", _formatTime(_startTimeValue)),
-                          Container(
-                            height: 1,
-                            width: 30,
-                            color: Colors.white.withValues(alpha: 0.1),
-                          ),
-                          _buildTimeDisplay("END", _formatTime(_endTimeValue)),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-
-                      Column(
-                        children: [
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              double width = constraints.maxWidth;
-                              return Stack(
-                                alignment: Alignment.centerLeft,
-                                children: [
-                                  Container(
-                                    height: 6,
-                                    width: width,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.05),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    left: width * _startTimeValue,
-                                    child: Container(
-                                      height: 6,
-                                      width: width * (_endTimeValue - _startTimeValue),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(10),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.white.withOpacity(0.2),
-                                            blurRadius: 8,
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    left: (width * nowValue) - 4,
-                                    child: Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFFB138),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.black, width: 1.5),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFFFFB138).withOpacity(0.5),
-                                            blurRadius: 10,
-                                            spreadRadius: 2,
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _subText("00:00"),
-                              _subText("12:00"),
-                              _subText("24:00"),
-                            ],
-                          ),
+                          _subText("00:00"),
+                          _subText("12:00"),
+                          _subText("24:00"),
                         ],
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
             ),
           ),
