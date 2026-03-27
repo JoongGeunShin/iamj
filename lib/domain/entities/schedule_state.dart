@@ -49,20 +49,20 @@ class TaskItem {
   final String taskTitle;
   final List<TaskItemDetail>? detail;
   final String? restTime;
-  final bool isDone;
+  final bool isCompleted;
 
   TaskItem({
     required this.taskTitle,
     this.detail,
     this.restTime,
-    this.isDone = false,
+    this.isCompleted = false,
   });
 
   Map<String, dynamic> toJson() => {
     'taskTitle': taskTitle,
     'detail': detail?.map((e) => e.toJson()).toList(),
     'restTime': restTime,
-    'isDone': isDone,
+    'isCompleted': isCompleted,
   };
 
   factory TaskItem.fromJson(Map<String, dynamic> json) {
@@ -72,7 +72,7 @@ class TaskItem {
           ?.map((e) => TaskItemDetail.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
       restTime: json['restTime'] ?? '',
-      isDone: json['isDone'] ?? false,
+      isCompleted: json['isCompleted'] ?? false,
     );
   }
 }
@@ -80,17 +80,22 @@ class TaskItem {
 class TaskItemDetail {
   final String sequence;
   final String restTime;
+  final bool isCompleted;
 
-  TaskItemDetail({required this.sequence, required this.restTime});
+  TaskItemDetail({required this.sequence, required this.restTime, required this.isCompleted});
 
   Map<String, dynamic> toJson() => {
     'sequence': sequence,
     'restTime': restTime,
+    'isCompleted' : isCompleted,
   };
   factory TaskItemDetail.fromJson(Map<String, dynamic> json) {
     return TaskItemDetail(
       sequence: json['sequence'] ?? '',
       restTime: json['restTime'] ?? '',
+      isCompleted: json['isCompleted'] is bool
+          ? json['isCompleted']
+          : (json['isCompleted'].toString().toLowerCase() == 'true'),
     );
   }
 }
