@@ -167,10 +167,50 @@ class _ContentScreenState extends ConsumerState<ContentScreen> {
                         return AnimatedBuilder(
                           animation: animation,
                           builder: (BuildContext context, Widget? child) {
+                            final double animValue = Curves.easeInOut.transform(animation.value);
+                            final double elevationAngle = animValue * 0.035;
+
                             return Material(
-                              elevation: 0,
                               color: Colors.transparent,
-                              child: child,
+                              child: Transform(
+                                alignment: Alignment.center,
+                                transform: Matrix4.identity()
+                                  ..scale(1 + (0.05 * animValue))
+                                  ..rotateZ(elevationAngle),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(28),
+                                    border: Border.all(
+                                      color: Color.lerp(
+                                          Colors.white.withValues(alpha: 0.1),
+                                          const Color(0xFFFFB138).withValues(alpha: 0.8),
+                                          animValue
+                                      )!,
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: animValue * 0.4),
+                                        blurRadius: 20 * animValue,
+                                        offset: Offset(0, 10 * animValue),
+                                        spreadRadius: 2 * animValue,
+                                      ),
+                                      BoxShadow(
+                                        color: const Color(0xFFFFB138).withValues(alpha: animValue * 0.15),
+                                        blurRadius: 30 * animValue,
+                                        spreadRadius: 5 * animValue,
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(28),
+                                    child: Container(
+                                      color: const Color(0xFF0D0D0D).withValues(alpha: animValue * 0.1),
+                                      child: child,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             );
                           },
                           child: child,
