@@ -129,7 +129,7 @@ class _ContentCardState extends ConsumerState<ContentCard>
         } else {
           for (var i = 0; i < s.tasks.length; i++) {
             final task = s.tasks[i];
-            print('  [${i + 1}] ${task.taskTitle} ${task.isDone ? "✅" : "❌"}');
+            print('  [${i + 1}] ${task.taskTitle} ${task.isCompleted ? "✅" : "❌"}');
 
             // 세부 단계(Detail)가 있다면 출력
             if (task.detail != null && task.detail!.isNotEmpty) {
