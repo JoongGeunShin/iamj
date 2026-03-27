@@ -1,106 +1,224 @@
 import 'package:flutter/material.dart';
+import '../../../../domain/entities/schedule_state.dart';
 
-class ContentTaskCard extends StatefulWidget {
-  final dynamic task;
-  const ContentTaskCard({super.key, required this.task});
+class ContentTaskCard extends StatelessWidget {
+  final TaskItem task;
+  final int index;
+  final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
-  @override
-  State<ContentTaskCard> createState() => _ContentTaskCardState();
-}
+  const ContentTaskCard({
+    super.key,
+    required this.task,
+    required this.index,
+    required this.onDelete,
+    required this.onEdit,
+  });
 
-class _ContentTaskCardState extends State<ContentTaskCard> {
-  bool _isExpanded = false;
+  bool get _isAllCompleted {
+    final List<TaskItemDetail> details = task.detail ?? [];
+    if (details.isEmpty) return false;
+    return details.every((d) => d.isCompleted == "true");
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _isExpanded = !_isExpanded;
-        });
+    final bool isDone = _isAllCompleted;
+
+    return Dismissible(
+      key: ValueKey('${task.taskTitle}_$index'),
+      background: _buildSwipeBg(
+        Alignment.centerLeft,
+        const Color(0xFFFFB138),
+        Icons.edit_rounded,
+        "EDIT",
+      ),
+      secondaryBackground: _buildSwipeBg(
+        Alignment.centerRight,
+        Colors.redAccent,
+        Icons.delete_outline_rounded,
+        "DELETE",
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onEdit();
+          return false;
+        } else {
+          onDelete();
+          return true;
+        }
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(20),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: const Color(0xFF0D0D0D),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: _isExpanded
-                ? const Color(0xFFFFB138).withValues(alpha: 0.5)
-                : Colors.white.withValues(alpha: 0.05),
+            color: isDone
+                ? const Color(0xFFFFB138).withOpacity(0.5)
+                : Colors.white.withOpacity(0.05),
+            width: 1.5,
           ),
+          boxShadow: isDone
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFFFB138).withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: -5,
+                  ),
+                ]
+              : [],
         ),
-        child: Column(
-          children: [
-            Row(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 8,
+            ),
+            iconColor: const Color(0xFFFFB138),
+            collapsedIconColor: Colors.white.withOpacity(0.2),
+            shape: const Border(),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                      _isExpanded ? Icons.keyboard_arrow_up : Icons.check,
-                      color: const Color(0xFFFFB138),
-                      size: 18
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    widget.task.taskTitle,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                AnimatedRotation(
-                  turns: _isExpanded ? 0.25 : 0,
-                  duration: const Duration(milliseconds: 300),
-                  child: Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.white.withValues(alpha: 0.1),
-                    size: 14,
+                _buildStatusChip(isDone),
+                const SizedBox(height: 8),
+                Text(
+                  task.taskTitle,
+                  style: TextStyle(
+                    color: isDone
+                        ? Colors.white.withOpacity(0.5)
+                        : Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    decoration: isDone ? TextDecoration.lineThrough : null,
                   ),
                 ),
               ],
             ),
-
-            AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(),
-              secondChild: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  const Divider(color: Colors.white10),
-                  const SizedBox(height: 12),
-                  ...widget.task.detail.map<Widget>((d) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.subdirectory_arrow_right, color: Colors.white24, size: 16),
-                        const SizedBox(width: 12),
-                        Text(
-                          "${d.sequence} (${d.restTime})",
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
-                ],
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                "Rest: ${task.restTime ?? '0초'} • ${task.detail?.length ?? 0} Steps",
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.3),
+                  fontSize: 12,
+                ),
               ),
-              crossFadeState: _isExpanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 300),
             ),
-          ],
+            trailing: ReorderableDragStartListener(
+              index: index,
+              child: Icon(
+                Icons.drag_indicator_rounded,
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+            children: [
+              Container(
+                padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+                child: Column(
+                  children: [
+                    Divider(color: Colors.white.withOpacity(0.05)),
+                    const SizedBox(height: 12),
+                    if (task.detail != null)
+                      ...task.detail!
+                          .map<Widget>((d) => _buildDetailRow(d))
+                          .toList(),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+  Widget _buildStatusChip(bool isDone) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDone
+            ? const Color(0xFFFFB138)
+            : Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        isDone ? "ALL DONE" : "IN PROGRESS",
+        style: TextStyle(
+          color: isDone ? Colors.black : Colors.white.withOpacity(0.4),
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(TaskItemDetail d) {
+    final bool itemDone = d.isCompleted == "true";
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(
+            itemDone ? Icons.check_circle_rounded : Icons.circle_outlined,
+            color: itemDone
+                ? const Color(0xFFFFB138)
+                : Colors.white.withOpacity(0.1),
+            size: 20,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              d.sequence,
+              style: TextStyle(
+                color: itemDone
+                    ? Colors.white.withOpacity(0.3)
+                    : Colors.white.withOpacity(0.8),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          if (d.restTime != "0초")
+            Text(
+              d.restTime,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.2),
+                fontSize: 11,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+  Widget _buildSwipeBg(
+    Alignment alignment,
+    Color color,
+    IconData icon,
+    String label,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      alignment: alignment,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.black, size: 28),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.w900,
+              fontSize: 10,
+            ),
+          ),
+        ],
       ),
     );
   }
