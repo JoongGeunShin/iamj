@@ -157,11 +157,48 @@ class _ContentScreenState extends ConsumerState<ContentScreen> {
                   const SizedBox(height: 20),
 
                   if (widget.schedule.tasks.isEmpty)
-                    EmptyTaskCard()
+                    const EmptyTaskCard()
                   else
-                    ...widget.schedule.tasks
-                        .map((task) => ContentTaskCard(task:task))
-                        .toList(),
+                    ReorderableListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: widget.schedule.tasks.length,
+                      proxyDecorator: (Widget child, int index, Animation<double> animation) {
+                        return AnimatedBuilder(
+                          animation: animation,
+                          builder: (BuildContext context, Widget? child) {
+                            return Material(
+                              elevation: 0,
+                              color: Colors.transparent,
+                              child: child,
+                            );
+                          },
+                          child: child,
+                        );
+                      },
+                      onReorder: (oldIndex, newIndex) {
+                        setState(() {
+                          if (oldIndex < newIndex) newIndex -= 1;
+                          final task = widget.schedule.tasks.removeAt(oldIndex);
+                          widget.schedule.tasks.insert(newIndex, task);
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final task = widget.schedule.tasks[index];
+
+                        return ContentTaskCard(
+                          key: ValueKey('${task.taskTitle}_$index'),
+                          task: task,
+                          index: index,
+                          onDelete: () {
+                            setState(() => widget.schedule.tasks.removeAt(index));
+                          },
+                          onEdit: () {
+                            // 수정 dialog 만들어야됨
+                          },
+                        );
+                      },
+                    ),
                   const SizedBox(height: 100),
                 ],
               ),
